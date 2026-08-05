@@ -673,7 +673,21 @@ function seedAdminUser() {
   }
 }
 
-initDb();
-upgradeLessonContent();
+function bootstrapDb() {
+  try {
+    console.log('Inicializando base de datos...');
+    initDb();
+    upgradeLessonContent();
+    console.log('Base de datos lista.');
+  } catch (err) {
+    console.error('Error al inicializar base de datos:', err);
+  }
+}
+
+if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+  setImmediate(bootstrapDb);
+} else {
+  bootstrapDb();
+}
 
 module.exports = db;

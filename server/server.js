@@ -4,46 +4,13 @@ const cors = require('cors');
 const path = require('path');
 const os = require('os');
 
-require('./db');
-
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
-const courseRoutes = require('./routes/courses');
-const tutoringRoutes = require('./routes/tutoring');
-const chatRoutes = require('./routes/chat');
-const reviewRoutes = require('./routes/reviews');
-const statsRoutes = require('./routes/stats');
-const adminRoutes = require('./routes/admin');
-const teacherRoutes = require('./routes/teachers');
-const escapeRoutes = require('./routes/escape');
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Panel admin del juego (solo con login de administrador)
-app.get('/escape-admin', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'escape-admin.html'));
-});
-app.get('/escape-admin.html', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'escape-admin.html'));
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/tutoring', tutoringRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/teachers', teacherRoutes);
-app.use('/api/escape', escapeRoutes);
-
-app.use(express.static(path.join(__dirname, '..')));
-
+// Health check primero — Render necesita respuesta rápida al despertar
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Digital Academy API running' });
 });
@@ -98,3 +65,37 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Mobile access: http://${ip}:${PORT}`);
   console.log(`Demo account: demo@digitalacademy.com / demo1234`);
 });
+
+// Cargar BD y rutas después de abrir el puerto (Render free tier)
+require('./db');
+
+const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
+const courseRoutes = require('./routes/courses');
+const tutoringRoutes = require('./routes/tutoring');
+const chatRoutes = require('./routes/chat');
+const reviewRoutes = require('./routes/reviews');
+const statsRoutes = require('./routes/stats');
+const adminRoutes = require('./routes/admin');
+const teacherRoutes = require('./routes/teachers');
+const escapeRoutes = require('./routes/escape');
+
+app.get('/escape-admin', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'escape-admin.html'));
+});
+app.get('/escape-admin.html', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'escape-admin.html'));
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/tutoring', tutoringRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/teachers', teacherRoutes);
+app.use('/api/escape', escapeRoutes);
+
+app.use(express.static(path.join(__dirname, '..')));
