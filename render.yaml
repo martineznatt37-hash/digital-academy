@@ -1,18 +1,14 @@
-# Backend Digital Academy — despliega en https://render.com (plan gratis)
-# Conecta tu repo de GitHub → New Web Service → Blueprint o manual con rootDir: server
+# Render — Digital Academy API
 
 services:
   - type: web
-    name: digital-academy-api
-    runtime: node
-    rootDir: server
-    buildCommand: npm install
-    startCommand: npm start
+    name: digital-academy
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
     plan: free
     healthCheckPath: /api/health
     envVars:
-      - key: NODE_VERSION
-        value: "22"
       - key: JWT_SECRET
         generateValue: true
       - key: GEMINI_API_KEY
