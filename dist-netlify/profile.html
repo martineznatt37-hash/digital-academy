@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi perfil — Digital Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/pet.css">
+</head>
+<body class="profile-page">
+
+  <nav class="navbar scrolled">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+        </div>
+        Digital Academy
+      </a>
+      <div class="nav-links">
+        <a href="index.html#cursos">Cursos</a>
+        <a href="index.html#asesorias">Asesorías</a>
+        <a href="index.html#estadisticas">Progreso</a>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-search">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" placeholder="Buscar cursos..." aria-label="Buscar">
+        </div>
+        <button class="nav-notif" aria-label="Notificaciones" data-panel="notifications">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge"></span>
+        </button>
+        <a href="login.html" class="btn btn-ghost btn-sm">Cerrar sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="profile-header">
+    <div class="container">
+      <div class="profile-avatar">SM</div>
+      <div class="profile-info">
+        <h1>Sofía Martínez</h1>
+        <p>sofia.martinez@email.com · Secundaria — 2° año</p>
+        <div class="profile-level">🏅 Nivel 8 · Estudiante avanzado</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container profile-layout">
+    <aside class="profile-sidebar">
+      <div class="profile-nav-item active" data-panel="overview">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Resumen
+      </div>
+      <div class="profile-nav-item" data-panel="courses">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Mis cursos
+      </div>
+      <div class="profile-nav-item" data-panel="catalog">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+        Explorar cursos
+      </div>
+      <div class="profile-nav-item" data-panel="pet">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2c-1 3-3 5-5 6 0 3 1 6 3 8 2-2 3-5 3-8-2-1-4-3-5-6z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 14s1 2 3 2 3-2 3-2"/></svg>
+        Mi mascota
+      </div>
+      <div class="profile-nav-item" data-panel="certificates">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15l-2 5-2-5H2l4-3-1.5-5L12 8l7.5 4L18 12l4 3h-6z"/></svg>
+        Certificados
+      </div>
+      <div class="profile-nav-item" data-panel="favorites">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Favoritos
+      </div>
+      <div class="profile-nav-item" data-panel="tutoring">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Mis asesorías
+      </div>
+      <div class="profile-nav-item" data-panel="notifications">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notificaciones
+      </div>
+      <div class="profile-nav-item" data-panel="settings">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configuración
+      </div>
+    </aside>
+
+    <main class="profile-content">
+      <!-- Overview -->
+      <section class="profile-panel active" id="overview">
+        <h2>Resumen de progreso</h2>
+        <div class="profile-stats-mini">
+          <div class="mini-stat"><div class="value">78%</div><div class="label">Progreso</div></div>
+          <div class="mini-stat"><div class="value">12</div><div class="label">Cursos</div></div>
+          <div class="mini-stat"><div class="value">156h</div><div class="label">Estudiadas</div></div>
+          <div class="mini-stat"><div class="value">8</div><div class="label">Nivel</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Actividad de estudio</h3>
+              <div class="chart-toggle">
+                <button class="chart-toggle-btn active" data-period="weekly">Semanal</button>
+                <button class="chart-toggle-btn" data-period="monthly">Mensual</button>
+              </div>
+            </div>
+            <canvas id="profileChart" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Últimos logros</h3>
+            <div class="achievements">
+              <div class="achievement"><div class="achievement-icon">🔥</div><div><strong>Racha de 7 días</strong><span>Hace 1 semana</span></div></div>
+              <div class="achievement"><div class="achievement-icon">💯</div><div><strong>100% en examen</strong><span>Hace 3 días</span></div></div>
+              <div class="achievement"><div class="achievement-icon">🎓</div><div><strong>5 certificados</strong><span>Este mes</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div id="pet-mini" class="pet-mini"></div>
+      </section>
+
+      <!-- Course History -->
+      <section class="profile-panel" id="courses">
+        <div class="panel-header-row">
+          <h2>Mis cursos</h2>
+          <button class="btn btn-primary btn-sm go-catalog">+ Agregar curso</button>
+        </div>
+        <div id="my-courses-list"></div>
+      </section>
+
+      <!-- Course Catalog -->
+      <section class="profile-panel" id="catalog">
+        <h2>Explorar cursos</h2>
+        <p class="panel-desc">Inscríbete en un curso para comenzar a aprender. Todo el contenido está disponible de inmediato.</p>
+        <div class="catalog-tabs">
+          <button class="catalog-tab active" data-level="all">Todos</button>
+          <button class="catalog-tab" data-level="primaria">Primaria</button>
+          <button class="catalog-tab" data-level="secundaria">Secundaria</button>
+          <button class="catalog-tab" data-level="preparatoria">Preparatoria</button>
+          <button class="catalog-tab" data-level="capacitacion">Tecnología</button>
+        </div>
+        <div id="catalog-grid" class="catalog-grid"></div>
+      </section>
+
+      <!-- Pet -->
+      <section class="profile-panel" id="pet">
+        <h2>Mi mascota</h2>
+        <div id="pet-container" class="pet-container"></div>
+      </section>
+
+      <!-- Certificates -->
+      <section class="profile-panel" id="certificates">
+        <h2>Mis certificados</h2>
+      </section>
+
+      <!-- Favorites -->
+      <section class="profile-panel" id="favorites">
+        <h2>Cursos favoritos</h2>
+        <div class="favorite-card">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect fill='%23DBEAFE' width='80' height='60' rx='6'/%3E%3Ctext x='40' y='38' text-anchor='middle' font-size='24'%3E🤖%3C/text%3E%3C/svg%3E" alt="">
+          <div class="course-history-info">
+            <h4>Fundamentos de Inteligencia Artificial</h4>
+            <p>Preparatoria · 24 lecciones · ⭐ Guardado</p>
+          </div>
+          <a href="#" class="btn btn-primary btn-sm">Continuar</a>
+        </div>
+        <div class="favorite-card">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect fill='%23EDE9FE' width='80' height='60' rx='6'/%3E%3Ctext x='40' y='38' text-anchor='middle' font-size='24'%3E📐%3C/text%3E%3C/svg%3E" alt="">
+          <div class="course-history-info">
+            <h4>Cálculo Diferencial</h4>
+            <p>Preparatoria · 40 lecciones · ⭐ Guardado</p>
+          </div>
+          <a href="#" class="btn btn-primary btn-sm">Ver curso</a>
+        </div>
+      </section>
+
+      <!-- Tutoring -->
+      <section class="profile-panel" id="tutoring">
+        <h2>Mis asesorías</h2>
+        <div id="tutoring-list"></div>
+        <a href="index.html#asesorias" class="btn btn-primary btn-sm" style="margin-top:16px">Agendar nueva asesoría</a>
+      </section>
+
+      <!-- Notifications -->
+      <section class="profile-panel" id="notifications">
+        <h2>Notificaciones</h2>
+        <div class="notification-item unread">
+          <div class="notification-dot"></div>
+          <div class="notification-content">
+            <strong>Nueva lección disponible</strong>
+            <p>Álgebra Básica — Lección 28: Ecuaciones cuadráticas</p>
+            <time>Hace 2 horas</time>
+          </div>
+        </div>
+        <div class="notification-item unread">
+          <div class="notification-dot"></div>
+          <div class="notification-content">
+            <strong>Asesoría confirmada</strong>
+            <p>Tu sesión con Prof. María González es mañana a las 10:00</p>
+            <time>Hace 5 horas</time>
+          </div>
+        </div>
+        <div class="notification-item read">
+          <div class="notification-dot"></div>
+          <div class="notification-content">
+            <strong>¡Certificado obtenido!</strong>
+            <p>Completaste "Introducción a la Programación". Descarga tu certificado.</p>
+            <time>Ayer</time>
+          </div>
+        </div>
+        <div class="notification-item read">
+          <div class="notification-dot"></div>
+          <div class="notification-content">
+            <strong>Logro desbloqueado: Racha de 7 días</strong>
+            <p>Has estudiado 7 días consecutivos. ¡Sigue así!</p>
+            <time>Hace 1 semana</time>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="profile-panel" id="settings">
+        <h2>Configuración del perfil</h2>
+        <form class="settings-form" id="settings-form">
+          <div class="form-group" style="margin-bottom:16px">
+            <label for="s-name">Nombre completo</label>
+            <input type="text" id="s-name" value="Sofía Martínez" style="width:100%;padding:14px 16px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:.9375rem">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label for="s-email">Correo electrónico</label>
+            <input type="email" id="s-email" value="sofia.martinez@email.com" style="width:100%;padding:14px 16px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:.9375rem">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>Nivel educativo</label>
+            <p id="s-level-display" class="level-readonly" style="padding:14px 16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:.9375rem;margin:0;color:var(--gray-700)">—</p>
+            <small style="color:var(--gray-500);font-size:.8rem">El nivel se define al crear tu cuenta y no se puede cambiar.</small>
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div class="chat-widget">
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <div class="chat-panel-header-info">
+          <div class="chat-panel-avatar">🤖</div>
+          <div><strong>Asistente IA</strong><span>Disponible 24/7</span></div>
+        </div>
+        <button class="chat-close" aria-label="Cerrar chat"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="chat-panel-messages"></div>
+      <div class="chat-quick-actions">
+        <button class="chat-quick-btn">Mi progreso</button>
+        <button class="chat-quick-btn">Recomendar curso</button>
+      </div>
+      <div class="chat-panel-input">
+        <input type="text" placeholder="Escribe tu mensaje..." aria-label="Mensaje">
+        <button aria-label="Enviar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+      </div>
+    </div>
+    <button class="chat-toggle" aria-label="Abrir chat"><span class="pulse-ring"></span><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/pet.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

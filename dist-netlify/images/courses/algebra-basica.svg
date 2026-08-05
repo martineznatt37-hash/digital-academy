@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#A78BFA"/>
+  </linearGradient></defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <text x="400" y="240" text-anchor="middle" font-size="36" fill="white" font-family="Arial,sans-serif" font-weight="bold">Algebra</text>
+</svg>

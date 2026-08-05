@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#00ffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Escape Hacker">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/escape-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/escape-192.png">
+<title>Escape del Hacker 2.0</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Courier New', monospace; -webkit-tap-highlight-color:transparent; }
+html, body{ width:100%; height:100%; }
+body{ background:black; color:#00ffff; overflow:hidden; overscroll-behavior:none; }
+body::before{
+    content:""; position:absolute; width:100%; height:100%;
+    background:
+    linear-gradient(90deg, transparent 95%, rgba(0,255,255,.1) 100%),
+    linear-gradient(0deg, transparent 95%, rgba(0,255,255,.1) 100%);
+    background-size:40px 40px; animation:mover 10s linear infinite; pointer-events:none;
+}
+@keyframes mover{ from{transform:translateY(0)} to{transform:translateY(40px)} }
+#menu{
+    position:absolute; width:100%; height:100vh; display:flex;
+    justify-content:center; align-items:center; flex-direction:column;
+    background:radial-gradient(circle,#003344,#000); z-index:10;
+}
+#menu h1{
+    font-size:70px; color:#00ffff;
+    text-shadow:0 0 10px cyan,0 0 30px cyan,0 0 60px cyan;
+    animation:glow 2s infinite alternate;
+}
+@keyframes glow{ from{text-shadow:0 0 10px cyan} to{text-shadow:0 0 50px cyan} }
+#menu p{ margin:30px; font-size:20px; color:white; text-align:center; max-width:700px; }
+button{
+    padding:20px 60px; font-size:25px; font-weight:bold; border:none;
+    border-radius:10px; background:#00ffff; cursor:pointer; box-shadow:0 0 20px cyan;
+    touch-action:manipulation;
+}
+button:hover{ transform:scale(1.1); background:white; }
+button:active{ transform:scale(0.98); }
+#hud{
+    display:none; position:absolute; top:10px; width:100%;
+    justify-content:center; gap:24px; font-size:20px; font-weight:bold; z-index:5;
+}
+#nombreNivel{
+    display:none; position:absolute; top:42px; width:100%;
+    text-align:center; font-size:16px; color:#88ffff; z-index:5;
+    text-shadow:0 0 8px cyan;
+}
+canvas{
+    display:none; margin:auto; margin-top:70px;
+    background:radial-gradient(circle,#001b2b,#000);
+    border:3px solid cyan; box-shadow:0 0 20px cyan,0 0 50px cyan;
+    max-width:95vw; height:auto; aspect-ratio:10/6;
+}
+#gameOver,#victoria,#nivelCompleto,#panelCodigo{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:rgba(0,0,0,.95); justify-content:center; align-items:center;
+    flex-direction:column; z-index:20;
+}
+#gameOver h1{ font-size:80px; color:red; text-shadow:0 0 30px red; }
+#victoria h1{ font-size:80px; color:#00ff66; text-shadow:0 0 30px #00ff66; }
+#nivelCompleto h1{ font-size:50px; color:#00ffff; text-shadow:0 0 30px cyan; margin-bottom:20px; }
+#nivelCompleto p{ color:white; font-size:22px; margin-bottom:30px; text-align:center; }
+#panelCodigo h2{ color:#bb88ff; font-size:36px; margin-bottom:16px; text-shadow:0 0 20px #aa66ff; }
+#panelCodigo p{ color:#ddd; margin-bottom:12px; text-align:center; max-width:520px; }
+#panelCodigo .codigoReveal{
+    font-size:42px; letter-spacing:12px; color:#00ffaa;
+    text-shadow:0 0 20px #00ffaa; margin:18px 0; font-weight:bold;
+}
+#codigoInput{
+    font-size:28px; padding:12px 20px; letter-spacing:8px; text-align:center;
+    background:#111; border:2px solid #aa66ff; color:#fff; width:280px; margin:10px 0 20px;
+}
+#avisoCodigo{
+    display:none; position:absolute; bottom:30px; width:100%; text-align:center;
+    color:#bb88ff; font-size:18px; z-index:6; text-shadow:0 0 10px #aa66ff;
+}
+#selectPersonaje{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:radial-gradient(circle,#001a22,#000); z-index:15;
+    overflow-y:auto; padding:24px 20px 40px;
+}
+#selectPersonaje h1{
+    text-align:center; font-size:36px; color:#00ffff;
+    text-shadow:0 0 20px cyan; margin-bottom:8px;
+}
+#selectPersonaje .sub{
+    text-align:center; color:#aaa; margin-bottom:22px; font-size:16px;
+}
+#gridChars{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;
+    max-width:1100px; margin:0 auto 20px;
+}
+#gridChars .charCard:nth-child(5){ grid-column:1; }
+.charCard{
+    background:#0a1520; border:2px solid #224455; border-radius:12px;
+    padding:12px; cursor:pointer; text-align:center; transition:0.15s;
+}
+.charCard:hover{ border-color:#00ffff; transform:translateY(-3px); box-shadow:0 0 16px rgba(0,255,255,.35); }
+.charCard.selected{ border-color:#00ff88; box-shadow:0 0 22px rgba(0,255,136,.55); background:#0a2218; }
+.charCard img{
+    width:100%; height:250px; object-fit:contain;
+    image-rendering: auto;
+    background: linear-gradient(180deg, #1e2a38 0%, #0f1822 100%);
+    border-radius:8px;
+    filter: saturate(1.1) brightness(1.05);
+    padding:10px;
+}
+.charCard h3{ color:#00ffff; margin:8px 0 2px; font-size:18px; }
+.charCard .rol{ color:#88aacc; font-size:12px; margin-bottom:6px; }
+.charCard .hab{ color:#ffdd66; font-size:12px; line-height:1.35; min-height:34px; }
+#detalleChar{
+    text-align:center; color:#fff; margin:10px auto 18px; max-width:700px; font-size:15px; min-height:40px;
+}
+#accionesSelect{ display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+#accionesSelect button{ font-size:20px; padding:14px 36px; }
+#accionesSelect button:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+#habHUD{
+    display:none; position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+    color:#ffdd66; font-size:15px; z-index:6; text-shadow:0 0 8px #aa8800;
+    background:rgba(0,0,0,.55); padding:6px 14px; border-radius:8px; border:1px solid #665500;
+}
+#introVirus{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(120,0,80,.45), transparent 50%),
+        radial-gradient(circle,#0a0014,#000); z-index:25;
+    justify-content:center; align-items:center; flex-direction:column;
+    padding:24px; text-align:center;
+}
+#introVirus .virusCard{
+    background:linear-gradient(180deg, rgba(20,10,40,.95), rgba(0,0,0,.92));
+    border:2px solid #ff44aa; border-radius:16px;
+    box-shadow:0 0 30px rgba(255,50,150,.35), inset 0 0 40px rgba(255,0,120,.08);
+    padding:28px 36px; max-width:640px; width:92%;
+}
+#introVirus img{
+    width:260px; height:260px; object-fit:contain;
+    image-rendering:auto; margin:12px auto 18px;
+    filter: none;
+    display:block;
+}
+#introVirus h1{
+    font-size:38px; color:#ff66aa; text-shadow:0 0 18px #ff2288; margin:4px 0 8px;
+}
+#introVirus h2{ font-size:18px; color:#88ffff; margin-bottom:6px; letter-spacing:1px; }
+#introVirus p{ color:#e8e8e8; max-width:520px; font-size:17px; line-height:1.5; margin:0 auto 12px; }
+#introVirus .tip{
+    color:#ffdd77; font-size:15px; margin:10px auto 22px;
+    padding:10px 14px; border:1px dashed #aa8844; border-radius:8px;
+    background:rgba(80,50,0,.25); max-width:520px;
+}
+#introVirus button{ font-size:20px; padding:14px 40px; }
+
+#mobileControls{
+    display:none; position:fixed; left:0; right:0; bottom:0; width:100%; z-index:20;
+    justify-content:space-between; align-items:flex-end;
+    padding: 0 max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-right));
+    pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,.75) 40%, transparent);
+}
+#mobileControls.active { display:flex; }
+#dpad {
+    display:grid; grid-template-columns: 64px 64px 64px; grid-template-rows: 64px 64px 64px;
+    gap: 8px; pointer-events:auto;
+}
+.dpad-btn {
+    background:rgba(0, 255, 255, 0.18); border:2px solid cyan; border-radius:14px;
+    color:white; font-size:26px; font-weight:bold;
+    display:flex; justify-content:center; align-items:center; cursor:pointer;
+    user-select:none; touch-action:none; -webkit-user-select:none;
+    box-shadow:0 0 12px rgba(0,255,255,.2);
+}
+.dpad-btn.pressed, .dpad-btn:active { background:rgba(0, 255, 255, 0.55); transform:scale(0.96); }
+#btnUp { grid-column: 2; grid-row: 1; }
+#btnLeft { grid-column: 1; grid-row: 2; }
+#btnRight { grid-column: 3; grid-row: 2; }
+#btnDown { grid-column: 2; grid-row: 3; }
+
+#actionBtn {
+    width: 84px; height: 84px; border-radius:50%; background:rgba(255, 221, 102, 0.2);
+    border:3px solid #ffdd66; color:#ffdd66; font-size:28px; font-weight:bold;
+    display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px;
+    cursor:pointer; pointer-events:auto; user-select:none; touch-action:none; -webkit-user-select:none;
+    margin-bottom: 28px; box-shadow:0 0 16px rgba(255,221,102,.3);
+}
+#actionBtn span{ font-size:11px; letter-spacing:1px; color:#ffe899; }
+#actionBtn.pressed, #actionBtn:active { background:rgba(255, 221, 102, 0.55); transform:scale(0.96); }
+
+@media (min-width:901px){
+    #mobileControls.active { display:none !important; }
+}
+
+/* —— Móvil / tablet —— */
+@media (max-width:900px){
+    #menu{
+        height:100dvh; padding: max(20px, env(safe-area-inset-top)) 18px 28px;
+        justify-content:center;
+    }
+    #menu h1{
+        font-size:clamp(28px, 9vw, 48px);
+        text-align:center; line-height:1.1; padding:0 8px;
+    }
+    #menu p{
+        margin:18px 8px 28px; font-size:clamp(14px, 3.8vw, 18px);
+        line-height:1.45; max-width:92vw;
+    }
+    #menu button, #accionesSelect button, #introVirus button,
+    #gameOver button, #victoria button, #nivelCompleto button, #panelCodigo button{
+        width:min(92vw, 360px); padding:16px 20px; font-size:clamp(16px, 4.5vw, 22px);
+    }
+
+    #selectPersonaje{
+        height:100dvh; padding: max(16px, env(safe-area-inset-top)) 12px max(24px, env(safe-area-inset-bottom));
+        -webkit-overflow-scrolling:touch;
+    }
+    #selectPersonaje h1{ font-size:clamp(22px, 6.5vw, 32px); }
+    #selectPersonaje .sub{ font-size:13px; margin-bottom:14px; padding:0 6px; }
+    #gridChars{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+    #gridChars .charCard:nth-child(5){ grid-column:auto; }
+    .charCard{ padding:8px; border-radius:10px; }
+    .charCard img{ height:140px; padding:6px; }
+    .charCard h3{ font-size:15px; margin:6px 0 2px; }
+    .charCard .rol{ font-size:11px; }
+    .charCard .hab{ font-size:11px; min-height:40px; }
+    #detalleChar{ font-size:13px; margin:8px auto 14px; padding:0 8px; min-height:36px; }
+    #accionesSelect{ gap:10px; position:sticky; bottom:0; padding:10px 0 4px; background:linear-gradient(to top, #000 70%, transparent); }
+
+    #hud{
+        top: max(6px, env(safe-area-inset-top));
+        flex-wrap:wrap; font-size:13px; gap:8px 12px;
+        padding:4px 8px; line-height:1.2;
+    }
+    #nombreNivel{
+        top: auto; position:relative; margin-top:2px;
+        font-size:12px; padding:0 8px;
+    }
+    body.modo-juego #nombreNivel{
+        position:absolute; top:52px; width:100%;
+    }
+
+    canvas{
+        width:min(96vw, calc((100dvh - 250px) * 10 / 6)) !important;
+        max-width:96vw !important;
+        max-height:calc(100dvh - 250px) !important;
+        height:auto !important;
+        margin: 56px auto 0 !important;
+        border-width:2px;
+    }
+    body.modo-juego{ background:#000; }
+
+    #habHUD{
+        bottom: auto; top: auto;
+        left:50%; transform:translateX(-50%);
+        position:fixed;
+        bottom: calc(210px + env(safe-area-inset-bottom));
+        font-size:12px; padding:5px 10px; max-width:92vw;
+        text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #avisoCodigo{
+        bottom: calc(240px + env(safe-area-inset-bottom));
+        font-size:14px; padding:0 10px;
+    }
+
+    #introVirus{
+        height:100dvh; padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+        overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #introVirus .virusCard{ padding:18px 16px; width:96%; }
+    #introVirus img{ width:min(180px, 46vw); height:min(180px, 46vw); margin:8px auto 12px; }
+    #introVirus h1{ font-size:clamp(24px, 7vw, 34px); }
+    #introVirus h2{ font-size:15px; }
+    #introVirus p{ font-size:14px; }
+    #introVirus .tip{ font-size:13px; margin-bottom:16px; }
+
+    #gameOver, #victoria, #nivelCompleto, #panelCodigo{
+        height:100dvh; padding:20px 16px; text-align:center;
+    }
+    #gameOver h1, #victoria h1{ font-size:clamp(28px, 9vw, 48px); line-height:1.15; margin-bottom:18px; }
+    #nivelCompleto h1{ font-size:clamp(24px, 7vw, 40px); }
+    #nivelCompleto p{ font-size:16px; padding:0 8px; }
+    #panelCodigo h2{ font-size:clamp(22px, 6vw, 32px); }
+    #panelCodigo p{ font-size:14px; padding:0 8px; }
+    #panelCodigo .codigoReveal{ font-size:32px; letter-spacing:8px; }
+    #codigoInput{
+        font-size:22px; width:min(280px, 80vw); padding:14px 16px;
+    }
+
+    #dpad{
+        grid-template-columns: 68px 68px 68px;
+        grid-template-rows: 68px 68px 68px;
+        gap: 8px;
+    }
+    .dpad-btn{ font-size:28px; border-radius:16px; }
+    #actionBtn{ width:88px; height:88px; font-size:30px; margin-bottom:34px; margin-right:4px; }
+}
+
+@media (max-width:900px) and (orientation:landscape){
+    canvas{
+        width:min(62vw, calc((100dvh - 56px) * 10 / 6)) !important;
+        max-height:calc(100dvh - 56px) !important;
+        margin: 48px auto 0 !important;
+    }
+    #mobileControls{
+        background:none;
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+    #dpad{
+        grid-template-columns: 52px 52px 52px;
+        grid-template-rows: 52px 52px 52px;
+        gap: 6px;
+    }
+    .dpad-btn{ font-size:22px; border-radius:12px; }
+    #actionBtn{ width:68px; height:68px; font-size:24px; margin-bottom:18px; }
+    #actionBtn span{ display:none; }
+    #habHUD{ bottom: 12px; left:auto; right: max(12px, env(safe-area-inset-right)); transform:none; font-size:11px; }
+    #avisoCodigo{ bottom: 12px; font-size:12px; }
+    #hud{ font-size:12px; gap:8px; }
+    .charCard img{ height:100px; }
+}
+
+@media (max-width:380px){
+    .charCard img{ height:120px; }
+    #dpad{
+        grid-template-columns: 58px 58px 58px;
+        grid-template-rows: 58px 58px 58px;
+    }
+    #actionBtn{ width:76px; height:76px; }
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+    <h1>ESCAPE DEL HACKER</h1>
+    <p>
+        Has entrado al núcleo de una inteligencia artificial.
+        Escapa del sistema antes de que el antivirus te encuentre.
+        10 niveles · 1 minuto · 3 vidas por nivel
+    </p>
+    <button onclick="mostrarSeleccion()">ENTRAR AL SISTEMA</button>
+</div>
+
+<div id="selectPersonaje">
+    <h1>ELIGE TU PERSONAJE</h1>
+    <p class="sub">Cada uno tiene una habilidad pequeña que te ayuda un poco</p>
+    <div id="gridChars"></div>
+    <div id="detalleChar">Selecciona un personaje para continuar</div>
+    <div id="accionesSelect">
+        <button onclick="volverMenu()" style="background:#446677">VOLVER</button>
+        <button id="btnJugar" onclick="iniciar()" disabled>COMENZAR MISIÓN</button>
+    </div>
+</div>
+
+<div id="hud">
+    <div>❤️ <span id="vidas">3</span></div>
+    <div>⭐ <span id="puntos">0</span></div>
+    <div>🔑 <span id="llaves">0</span></div>
+    <div>⏳ <span id="tiempo">60</span></div>
+    <div>⚡ Nivel <span id="nivel">1</span></div>
+    <div id="hudPerso">👤 <span id="nombrePerso">—</span></div>
+</div>
+<div id="nombreNivel"></div>
+<div id="avisoCodigo"></div>
+<div id="habHUD"></div>
+
+<div id="introVirus">
+    <div class="virusCard">
+        <h2 id="introNivelTitulo">NIVEL 1</h2>
+        <h1 id="introVirusNombre">VIRUS</h1>
+        <img id="introVirusImg" src="assets/malware_intro/virus.png" alt="malware">
+        <p id="introVirusInfo">Se adjunta a archivos limpios y se propaga cuando se ejecutan.</p>
+        <p class="tip" id="introVirusTip">Consejo: recoge las llaves y llega a la puerta verde.</p>
+        <button onclick="empezarNivelTrasIntro()">ENTENDER · ENTRAR AL NIVEL</button>
+    </div>
+</div>
+
+<canvas id="canvas" width="1000" height="600"></canvas>
+
+<div id="mobileControls">
+    <div id="dpad">
+        <div class="dpad-btn" id="btnUp" data-key="ArrowUp">⬆️</div>
+        <div class="dpad-btn" id="btnLeft" data-key="ArrowLeft">⬅️</div>
+        <div class="dpad-btn" id="btnRight" data-key="ArrowRight">➡️</div>
+        <div class="dpad-btn" id="btnDown" data-key="ArrowDown">⬇️</div>
+    </div>
+    <div id="actionBtn" data-key="e">⚡<span>HABILIDAD</span></div>
+</div>
+
+<div id="gameOver">
+    <h1>SISTEMA BLOQUEADO</h1>
+    <button onclick="location.reload()">REINICIAR</button>
+</div>
+
+<div id="victoria">
+    <h1>HACK COMPLETADO</h1>
+    <p>Has escapado del sistema.</p>
+    <button onclick="location.reload()">JUGAR OTRA VEZ</button>
+</div>
+
+<div id="nivelCompleto">
+    <h1 id="tituloNivel">NIVEL COMPLETADO</h1>
+    <p id="textoNivel">Preparando siguiente nivel...</p>
+    <button onclick="siguienteNivel()">CONTINUAR</button>
+</div>
+
+<div id="panelCodigo">
+    <h2>CÓDIGO FANTASMA</h2>
+    <p>Has recuperado todas las llaves. El código fantasma aparece en pantalla.</p>
+    <div class="codigoReveal" id="codigoMostrado">----</div>
+    <p>Escríbelo para abrir la puerta:</p>
+    <input id="codigoInput" maxlength="4" autocomplete="off" placeholder="____">
+    <button onclick="verificarCodigo()">DESBLOQUEAR</button>
+    <p id="codigoError" style="color:#ff5555;margin-top:12px;min-height:24px;"></p>
+</div>
+
+<script>
+// ===============================
+// ESCAPE DEL HACKER 2.0
+// ===============================
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+
+let jugando = false;
+let vidas = 3;
+let puntos = 0;
+let llaves = 0;
+let tiempo = 60;
+let nivelActual = 1;
+let llavesNecesarias = 3;
+let tiempoTimer = null;
+let invencible = 0;
+let animFrame = 0;
+let temaActual = null;
+
+// Personaje seleccionado + habilidad
+let personaje = null;
+let escudoActivo = false;      // FIREWALL
+let patchUsado = false;        // PATCH
+let sombraUsada = false;       // SHADOW
+let sombraTimer = 0;
+let nexusUsado = false;        // NEXUS
+let ralentizarTimer = 0;
+
+const personajes = [
+    {
+        id:"byte", nombre:"BYTE", rol:"El hacker ético",
+        color:"#33ff66", img:"assets/chars/byte.png",
+        sheet:"assets/chars_sheets/byte_sheet.png",
+        hab:"Códigos y llaves: +50 pts extra por llave y pista del código fantasma.",
+        detalle:"Experto en seguridad. Recoge datos más valiosos."
+    },
+    {
+        id:"firewall", nombre:"FIREWALL", rol:"La guardiana de la red",
+        color:"#9966ff", img:"assets/chars/firewall.png",
+        sheet:"assets/chars_sheets/firewall_sheet.png",
+        hab:"Escudo: bloquea 1 golpe por nivel automáticamente.",
+        detalle:"Protege sistemas y bloquea amenazas."
+    },
+    {
+        id:"scan", nombre:"SCAN", rol:"El analista",
+        color:"#4488ff", img:"assets/chars/scan.png",
+        sheet:"assets/chars_sheets/scan_sheet.png",
+        hab:"Visión ampliada en Red Oscura y detecta enemigos cercanos.",
+        detalle:"Detecta y elimina amenazas ocultas."
+    },
+    {
+        id:"patch", nombre:"PATCH", rol:"La reparadora",
+        color:"#66ff99", img:"assets/chars/patch.png",
+        sheet:"assets/chars_sheets/patch_sheet.png",
+        hab:"Parche: recupera 1 vida 1 vez por nivel (tecla E).",
+        detalle:"Restaura sistemas y aplica parches."
+    },
+    {
+        id:"shadow", nombre:"SHADOW", rol:"El infiltrado",
+        color:"#ff3344", img:"assets/chars/shadow.png",
+        sheet:"assets/chars_sheets/shadow_sheet.png",
+        hab:"Sigilo: 2s invencible 1 vez por nivel (tecla E).",
+        detalle:"Se oculta y neutraliza malwares sigilosos."
+    },
+    {
+        id:"guard", nombre:"GUARD", rol:"El defensor",
+        color:"#ff8800", img:"assets/chars/guard.png",
+        sheet:"assets/chars_sheets/guard_sheet.png",
+        hab:"Blindaje: empieza cada nivel con 4 vidas.",
+        detalle:"Aguanta ataques y protege al equipo."
+    },
+    {
+        id:"nexus", nombre:"NEXUS", rol:"La estratega",
+        color:"#44ddff", img:"assets/chars/nexus.png",
+        sheet:"assets/chars_sheets/nexus_sheet.png",
+        hab:"Congelar: ralentiza enemigos 3s 1 vez por nivel (tecla E).",
+        detalle:"Controla sistemas y da soporte al equipo."
+    }
+];
+
+// Código Fantasma
+let codigoSecreto = "";
+let codigoDesbloqueado = false;
+let codigoIngresado = false;
+let panelCodigoAbierto = false;
+
+// Mecánicas especiales
+let lasers = [];
+let firewalls = [];
+let servidores = [];
+let nodosIA = [];
+let conexionesNN = [];
+let impulsosNN = [];
+let zonasInfeccion = [];
+let nucleo = null;
+
+const imgLlave = new Image();
+imgLlave.src = "assets/key.png";
+const imgPerso = new Image();
+const imgSheet = new Image();
+
+// Animación del personaje (sprite sheet 8 dirs)
+const DIRS = ["s","sw","w","nw","n","ne","e","se"];
+let anim = {
+    dir: 0,          // índice en DIRS
+    estado: "idle",  // idle | walk | hurt
+    frame: 0,
+    timer: 0,
+    hurtTimer: 0,
+    cw: 96,
+    ch: 128,
+    maxF: 4,
+    frames: { idle:2, walk:4, hurt:2 }
+};
+
+// Un malware distinto por nivel (sprites PNG transparentes)
+const malwares = {
+    virus:       { id:"virus",       nombre:"VIRUS",        archivo:"assets/malware/virus.png",
+        intro:"assets/malware_intro/virus.png",
+        info:"Se adjunta a archivos limpios y se propaga cuando se ejecutan.",
+        tip:"Mantén distancia de los virus rojos y recoge las llaves." },
+    gusano:      { id:"gusano",      nombre:"GUSANO (WORM)", archivo:"assets/malware/gusano.png",
+        intro:"assets/malware_intro/gusano.png",
+        info:"Se replica solo y se mueve por la red sin necesitar un archivo host.",
+        tip:"Hay más enemigos en movimiento. Usa los pasillos con cuidado." },
+    troyano:     { id:"troyano",     nombre:"TROYANO",      archivo:"assets/malware/troyano.png",
+        intro:"assets/malware_intro/troyano.png",
+        info:"Se disfraza de software legítimo para engañarte y abrir puertas traseras.",
+        tip:"Zona restringida: los láseres también quitan vida." },
+    ransomware:  { id:"ransomware",  nombre:"RANSOMWARE",   archivo:"assets/malware/ransomware.png",
+        intro:"assets/malware_intro/ransomware.png",
+        info:"Bloquea o cifra tus archivos y exige un rescate para liberarlos.",
+        tip:"El firewall se abre y cierra. Espera el hueco para pasar." },
+    spyware:     { id:"spyware",     nombre:"SPYWARE",      archivo:"assets/malware/spyware.png",
+        intro:"assets/malware_intro/spyware.png",
+        info:"Espía la red neuronal: observa pesos, activaciones y datos que la IA intenta imitar del cerebro.",
+        tip:"La IA copia redes neuronales. No te acerques al núcleo: las activaciones te empujan." },
+    adware:      { id:"adware",      nombre:"ADWARE",       archivo:"assets/malware/adware.png",
+        intro:"assets/malware_intro/adware.png",
+        info:"Llena el sistema de anuncios no deseados y rastrea tu navegación.",
+        tip:"Red Oscura: solo ves cerca de ti. Explora con calma." },
+    rootkit:     { id:"rootkit",     nombre:"ROOTKIT",      archivo:"assets/malware/rootkit.png",
+        intro:"assets/malware_intro/rootkit.png",
+        info:"Se oculta profundamente en el sistema para controlar y no ser detectado.",
+        tip:"Recoge todas las llaves para revelar el código fantasma." },
+    fileless:    { id:"fileless",    nombre:"FILELESS",     archivo:"assets/malware/fileless.png",
+        intro:"assets/malware_intro/fileless.png",
+        info:"No usa archivos: vive en la memoria para evadir la detección.",
+        tip:"Aparece un jefe. Evítalo mientras recoges las llaves." },
+    botnet:      { id:"botnet",      nombre:"BOTNET",       archivo:"assets/malware/botnet.png",
+        intro:"assets/malware_intro/botnet.png",
+        info:"Convierte dispositivos en una red para ataques masivos (DDoS, spam...).",
+        tip:"El jefe es más agresivo. Usa tu habilidad a tiempo." },
+    bomba:       { id:"bomba",       nombre:"BOMBA LÓGICA", archivo:"assets/malware/bomba.png",
+        intro:"assets/malware_intro/bomba.png",
+        info:"Se activa cuando se cumple una condición y causa daño o pérdida de datos.",
+        tip:"Último nivel. Completa el hack antes de que explote el tiempo." }
+};
+
+const imgsMalware = {};
+Object.keys(malwares).forEach(k => {
+    const im = new Image();
+    im.src = malwares[k].archivo;
+    imgsMalware[k] = im;
+});
+
+let malwareNivel = malwares.virus;
+
+const niveles = [
+    {
+        numero:1, nombre:"Infiltración", llaves:3, enemigos:2, velocidad:3,
+        jefe:false, scary:false, tema:"infiltracion", malware:"virus",
+        desc:"Amenaza: VIRUS — se adjunta y se propaga."
+    },
+    {
+        numero:2, nombre:"Servidores protegidos", llaves:3, enemigos:3, velocidad:3.5,
+        jefe:false, scary:false, tema:"servidores", malware:"gusano",
+        desc:"Amenaza: GUSANO — se replica por la red."
+    },
+    {
+        numero:3, nombre:"Zona restringida", llaves:4, enemigos:5, velocidad:4.2,
+        jefe:false, scary:false, tema:"restringida", malware:"troyano",
+        desc:"Amenaza: TROYANO — abre puertas traseras."
+    },
+    {
+        numero:4, nombre:"Firewall activo", llaves:4, enemigos:5, velocidad:4.5,
+        jefe:false, scary:false, tema:"firewall", malware:"ransomware",
+        desc:"Amenaza: RANSOMWARE — cifra y bloquea."
+    },
+    {
+        numero:5, nombre:"Red Neuronal", llaves:5, enemigos:5, velocidad:5,
+        jefe:false, scary:false, tema:"nucleo", malware:"spyware",
+        desc:"La IA imita el cerebro: capas, neuronas y conexiones."
+    },
+    {
+        numero:6, nombre:"Red Oscura", llaves:5, enemigos:6, velocidad:5.5,
+        jefe:false, scary:false, tema:"oscura", malware:"adware",
+        desc:"Amenaza: ADWARE — pop-ups en la oscuridad."
+    },
+    {
+        numero:7, nombre:"Código Fantasma", llaves:6, enemigos:6, velocidad:5.5,
+        jefe:false, scary:false, tema:"fantasma", malware:"rootkit",
+        desc:"Amenaza: ROOTKIT — se oculta en el código."
+    },
+    {
+        numero:8, nombre:"Virus Detectado", llaves:6, enemigos:6, velocidad:6,
+        jefe:true, scary:false, tema:"virus", malware:"fileless",
+        desc:"Amenaza: FILELESS — jefe en memoria."
+    },
+    {
+        numero:9, nombre:"Brote Viral", llaves:7, enemigos:7, velocidad:6.5,
+        jefe:true, scary:true, tema:"brote", malware:"botnet",
+        desc:"Amenaza: BOTNET — enjambre agresivo."
+    },
+    {
+        numero:10, nombre:"Jefe Virus Supremo", llaves:8, enemigos:8, velocidad:7,
+        jefe:true, scary:true, tema:"supremo", malware:"bomba",
+        desc:"Amenaza: BOMBA LÓGICA — detonación final."
+    }
+];
+
+const temas = {
+    infiltracion: { bg:"#001018", muro:"#005577", glow:"#00ffff", borde:"#00ffff" },
+    servidores:   { bg:"#001a28", muro:"#1a4a6a", glow:"#44aaff", borde:"#3399ff" },
+    restringida:  { bg:"#1a0a00", muro:"#663300", glow:"#ff6600", borde:"#ff4400" },
+    firewall:     { bg:"#1a0500", muro:"#772200", glow:"#ff8800", borde:"#ff5500" },
+    nucleo:       { bg:"#0a0018", muro:"#442266", glow:"#aa66ff", borde:"#cc88ff" },
+    oscura:       { bg:"#050508", muro:"#222233", glow:"#6644aa", borde:"#5533aa" },
+    fantasma:     { bg:"#0a1020", muro:"#335566", glow:"#88ffcc", borde:"#66ffaa" },
+    virus:        { bg:"#180018", muro:"#552255", glow:"#ff44aa", borde:"#ff66cc" },
+    brote:        { bg:"#1a0000", muro:"#551111", glow:"#ff2222", borde:"#ff0000" },
+    supremo:      { bg:"#120000", muro:"#440000", glow:"#ff0000", borde:"#ff3333" }
+};
+
+let teclas = {};
+const jugador = { x:40, y:40, w:42, h:50, vel:5.5 };
+const puerta = { x:900, y:500, w:45, h:60 };
+let muros = [];
+let llavesMapa = [];
+let enemigos = [];
+
+const layouts = {
+    // Pasillos anchos para que el jugador quepa y llegue a todas las llaves
+    infiltracion: [
+        {x:220,y:0,w:28,h:180},
+        {x:220,y:320,w:28,h:280},
+        {x:480,y:120,w:28,h:280},
+        {x:740,y:0,w:28,h:220},
+        {x:740,y:380,w:28,h:220}
+    ],
+    servidores: [
+        {x:200,y:0,w:30,h:170},{x:200,y:310,w:30,h:290},
+        {x:420,y:100,w:30,h:200},{x:420,y:380,w:30,h:220},
+        {x:640,y:0,w:30,h:230},{x:640,y:360,w:30,h:240},
+        {x:820,y:120,w:30,h:360}
+    ],
+    restringida: [
+        {x:180,y:0,w:26,h:180},{x:180,y:300,w:26,h:300},
+        {x:360,y:100,w:26,h:200},{x:360,y:380,w:26,h:220},
+        {x:560,y:0,w:26,h:220},{x:560,y:340,w:26,h:260},
+        {x:760,y:100,w:26,h:200},{x:760,y:400,w:26,h:200}
+    ],
+    firewall: [
+        {x:200,y:0,w:25,h:220},{x:200,y:340,w:25,h:260},
+        {x:400,y:80,w:25,h:440},{x:600,y:0,w:25,h:300},
+        {x:800,y:200,w:25,h:400},{x:300,y:200,w:80,h:20}
+    ],
+    // Capas tipo red neuronal: espacio central para el grafo
+    nucleo: [
+        {x:140,y:0,w:22,h:160},{x:140,y:380,w:22,h:220},
+        {x:320,y:0,w:22,h:140},{x:320,y:420,w:22,h:180},
+        {x:660,y:0,w:22,h:140},{x:660,y:420,w:22,h:180},
+        {x:840,y:0,w:22,h:160},{x:840,y:380,w:22,h:220}
+    ],
+    oscura: [
+        {x:180,y:80,w:25,h:420},{x:360,y:0,w:25,h:250},
+        {x:360,y:350,w:25,h:250},{x:540,y:100,w:25,h:400},
+        {x:720,y:0,w:25,h:280},{x:720,y:380,w:25,h:220}
+    ],
+    fantasma: [
+        {x:200,y:0,w:20,h:200},{x:200,y:300,w:20,h:300},
+        {x:400,y:50,w:20,h:400},{x:600,y:150,w:20,h:450},
+        {x:800,y:0,w:20,h:350}
+    ],
+    virus: [
+        {x:160,y:0,w:25,h:220},{x:160,y:320,w:25,h:280},
+        {x:360,y:120,w:25,h:360},{x:560,y:0,w:25,h:350},
+        {x:760,y:200,w:25,h:400},{x:250,y:280,w:120,h:25}
+    ],
+    brote: [
+        {x:150,y:0,w:25,h:250},{x:150,y:350,w:25,h:250},
+        {x:350,y:100,w:25,h:400},{x:550,y:0,w:25,h:300},{x:750,y:300,w:25,h:300}
+    ],
+    supremo: [
+        {x:180,y:80,w:25,h:420},{x:360,y:0,w:25,h:250},
+        {x:360,y:350,w:25,h:250},{x:540,y:100,w:25,h:400},
+        {x:720,y:0,w:25,h:280},{x:720,y:380,w:25,h:220}
+    ]
+};
+
+const posicionesLlaves = [
+    {x:120,y:120}, {x:340,y:200}, {x:600,y:100},
+    {x:120,y:480}, {x:380,y:450}, {x:640,y:400},
+    {x:860,y:140}, {x:860,y:420},
+    {x:500,y:300}, {x:300,y:80}, {x:700,y:280}, {x:900,y:300}
+];
+
+// Nivel 8 (virus): llaves bien separadas y lejos de muros
+const posicionesLlavesVirus = [
+    {x:80, y:90},
+    {x:280, y:160},
+    {x:480, y:80},
+    {x:80, y:500},
+    {x:420, y:500},
+    {x:880, y:120},
+    {x:680, y:480},
+    {x:900, y:450}
+];
+
+function pressKey(key, isDown) {
+    if(panelCodigoAbierto && isDown) return;
+    teclas[key.toLowerCase()] = isDown;
+    if(key.startsWith("Arrow")) teclas[key] = isDown;
+    if(key.toLowerCase() === "e" && isDown) usarHabilidad();
+}
+
+document.addEventListener("keydown", e => {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+    pressKey(e.key, true);
+});
+document.addEventListener("keyup", e => {
+    pressKey(e.key, false);
+});
+window.addEventListener("blur", () => { teclas = {}; });
+
+document.querySelectorAll(".dpad-btn, #actionBtn").forEach(btn => {
+    const soltar = () => {
+        btn.classList.remove("pressed");
+        pressKey(btn.getAttribute("data-key"), false);
+    };
+    btn.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        try { btn.setPointerCapture(e.pointerId); } catch(_){}
+        btn.classList.add("pressed");
+        pressKey(btn.getAttribute("data-key"), true);
+    });
+    btn.addEventListener("pointerup", e => { e.preventDefault(); soltar(); });
+    btn.addEventListener("pointercancel", soltar);
+    btn.addEventListener("lostpointercapture", soltar);
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+});
+
+document.getElementById("codigoInput").addEventListener("keydown", e => {
+    if(e.key === "Enter") verificarCodigo();
+});
+
+function renderSeleccion(){
+    let grid = document.getElementById("gridChars");
+    grid.innerHTML = "";
+    personajes.forEach(p => {
+        let card = document.createElement("div");
+        card.className = "charCard" + (personaje && personaje.id === p.id ? " selected" : "");
+        card.innerHTML =
+            `<img src="${p.img}" alt="${p.nombre}">` +
+            `<h3 style="color:${p.color}">${p.nombre}</h3>` +
+            `<div class="rol">${p.rol}</div>` +
+            `<div class="hab">⚡ ${p.hab}</div>`;
+        card.onclick = () => seleccionarPersonaje(p.id);
+        grid.appendChild(card);
+    });
+}
+
+function seleccionarPersonaje(id){
+    personaje = personajes.find(p => p.id === id);
+    imgPerso.src = personaje.img;
+    imgSheet.src = personaje.sheet;
+    document.getElementById("detalleChar").innerHTML =
+        `<b style="color:${personaje.color}">${personaje.nombre}</b> — ${personaje.detalle}<br>⚡ ${personaje.hab}`;
+    document.getElementById("btnJugar").disabled = false;
+    renderSeleccion();
+}
+
+function dirDesdeInput(dx, dy){
+    if(dx === 0 && dy === 0) return anim.dir;
+    // 8 direcciones
+    if(dx === 0 && dy > 0) return 0; // s
+    if(dx < 0 && dy > 0) return 1;   // sw
+    if(dx < 0 && dy === 0) return 2; // w
+    if(dx < 0 && dy < 0) return 3;   // nw
+    if(dx === 0 && dy < 0) return 4; // n
+    if(dx > 0 && dy < 0) return 5;   // ne
+    if(dx > 0 && dy === 0) return 6; // e
+    if(dx > 0 && dy > 0) return 7;   // se
+    return anim.dir;
+}
+
+function actualizarAnimacion(moving){
+    if(anim.hurtTimer > 0){
+        anim.hurtTimer--;
+        anim.estado = "hurt";
+    } else if(moving){
+        anim.estado = "walk";
+    } else {
+        anim.estado = "idle";
+    }
+    anim.timer++;
+    let speed = anim.estado === "walk" ? 6 : (anim.estado === "hurt" ? 4 : 12);
+    if(anim.timer >= speed){
+        anim.timer = 0;
+        let max = anim.frames[anim.estado] || 2;
+        anim.frame = (anim.frame + 1) % max;
+    }
+}
+
+function dibujarPersonajeSheet(x, y, drawW, drawH){
+    // Usar sprite grande y visible; animación = bob / flip / tinte daño
+    if(!imgPerso.complete || imgPerso.naturalWidth === 0){
+        ctx.fillStyle = personaje ? personaje.color : "#00ffff";
+        ctx.fillRect(x, y, drawW, drawH);
+        return;
+    }
+    let bob = 0;
+    if(anim.estado === "walk") bob = (anim.frame % 2 === 0) ? -3 : 1;
+    else if(anim.estado === "idle") bob = (anim.frame % 2 === 0) ? 0 : -2;
+
+    ctx.save();
+    let flip = (anim.dir === 1 || anim.dir === 2 || anim.dir === 3); // oeste
+    if(flip){
+        ctx.translate(x + drawW, y + bob);
+        ctx.scale(-1, 1);
+        ctx.drawImage(imgPerso, 0, 0, drawW, drawH);
+    } else {
+        ctx.drawImage(imgPerso, x, y + bob, drawW, drawH);
+    }
+    if(anim.estado === "hurt"){
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = "rgba(255,40,40,0.45)";
+        if(flip) ctx.fillRect(0, 0, drawW, drawH);
+        else ctx.fillRect(x, y + bob, drawW, drawH);
+    }
+    ctx.restore();
+}
+
+function mostrarIntroVirus(n){
+    let data = niveles[n - 1];
+    let m = malwares[data.malware];
+    malwareNivel = m;
+    document.getElementById("introNivelTitulo").innerHTML = "NIVEL " + data.numero + " — " + data.nombre.toUpperCase();
+    document.getElementById("introVirusNombre").innerHTML = "☣ " + m.nombre;
+    document.getElementById("introVirusImg").src = m.intro || m.archivo;
+    document.getElementById("introVirusInfo").innerHTML = m.info;
+    document.getElementById("introVirusTip").innerHTML = "Consejo: " + m.tip;
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    canvas.style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.getElementById("mobileControls").classList.remove("active");
+    document.getElementById("introVirus").style.display = "flex";
+    window._nivelPendiente = n;
+}
+
+function empezarNivelTrasIntro(){
+    document.getElementById("introVirus").style.display = "none";
+    document.getElementById("hud").style.display = "flex";
+    document.getElementById("nombreNivel").style.display = "block";
+    canvas.style.display = "block";
+    document.body.classList.add("modo-juego");
+    document.getElementById("mobileControls").classList.add("active");
+    cargarNivel(window._nivelPendiente || 1);
+    actualizarHabHUD();
+    jugando = true;
+    crearTiempo();
+    loop();
+}
+
+function mostrarSeleccion(){
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("selectPersonaje").style.display = "block";
+    renderSeleccion();
+}
+
+function volverMenu(){
+    document.getElementById("selectPersonaje").style.display = "none";
+    document.getElementById("menu").style.display = "flex";
+}
+
+function actualizarHabHUD(){
+    let el = document.getElementById("habHUD");
+    if(!personaje){ el.style.display = "none"; return; }
+    el.style.display = "block";
+    let txt = personaje.nombre + ": ";
+    if(personaje.id === "firewall") txt += escudoActivo ? "Escudo LISTO" : "Escudo usado";
+    else if(personaje.id === "patch") txt += patchUsado ? "Parche usado" : "E = +1 vida";
+    else if(personaje.id === "shadow") txt += sombraUsada ? (sombraTimer>0?"SIGILO...":"Sigilo usado") : "E = Sigilo 2s";
+    else if(personaje.id === "nexus") txt += nexusUsado ? (ralentizarTimer>0?"RALENTIZANDO...":"Congelar usado") : "E = Ralentizar";
+    else if(personaje.id === "byte") txt += "+50 pts/llave · pista de código";
+    else if(personaje.id === "scan") txt += "visión ampliada · radar";
+    else if(personaje.id === "guard") txt += "4 vidas por nivel";
+    el.innerHTML = txt;
+    el.style.borderColor = personaje.color;
+    el.style.color = personaje.color;
+}
+
+function usarHabilidad(){
+    if(!jugando || !personaje) return;
+
+    if(personaje.id === "patch" && !patchUsado){
+        if(vidas >= 5) return;
+        vidas++;
+        patchUsado = true;
+        document.getElementById("vidas").innerHTML = vidas;
+        sonidoClick();
+        actualizarHabHUD();
+        return;
+    }
+    if(personaje.id === "shadow" && !sombraUsada){
+        sombraUsada = true;
+        sombraTimer = 120; // ~2s
+        invencible = Math.max(invencible, 120);
+        sonidoClick();
+        actualizarHabHUD();
+        return;
+    }
+    if(personaje.id === "nexus" && !nexusUsado){
+        nexusUsado = true;
+        ralentizarTimer = 180; // ~3s
+        sonidoClick();
+        actualizarHabHUD();
+    }
+}
+
+function resetHabilidadesNivel(){
+    escudoActivo = personaje && personaje.id === "firewall";
+    patchUsado = false;
+    sombraUsada = false;
+    sombraTimer = 0;
+    nexusUsado = false;
+    ralentizarTimer = 0;
+    actualizarHabHUD();
+}
+
+function colision(a,b){
+    return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function chocaMuro(obj){
+    for(let m of muros) if(colision(obj,m)) return true;
+    // firewalls cerrados actúan como muro
+    for(let f of firewalls){
+        if(f.abierto) continue;
+        if(colision(obj, f)) return true;
+    }
+    return false;
+}
+
+function generarCodigo(){
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let c = "";
+    for(let i=0;i<4;i++) c += chars[Math.floor(Math.random()*chars.length)];
+    return c;
+}
+
+function generarEnemigos(data){
+    enemigos = [];
+    malwareNivel = malwares[data.malware] || malwares.virus;
+    let tamMini = data.scary ? 64 : 56;
+
+    for(let i=0;i<data.enemigos;i++){
+        let arriba = i % 2 === 0;
+        let col = Math.floor(i/2);
+        let fantasma = data.tema === "fantasma";
+        enemigos.push({
+            x: 220 + (col%5)*130,
+            y: arriba ? (60+(col%3)*50) : (400+(col%3)*40),
+            w: tamMini, h: tamMini,
+            velX: (i%2===0?1:-1) * data.velocidad,
+            velY: (i%3===0?1:-1) * (data.velocidad*0.4),
+            jefe:false,
+            fantasma,
+            malware: data.malware,
+            dir: i%2===0 ? "h" : "v"
+        });
+    }
+    // Solo niveles 8-10 tienen jefe que te sigue
+    if(data.jefe){
+        let tam = data.scary ? 130 : 112;
+        enemigos.push({
+            x:450, y:170, w:tam, h:tam,
+            jefe:true, scary:!!data.scary,
+            malware: data.malware,
+            velocidadJefe: data.scary ? 2.8 : 2.2
+        });
+    }
+}
+
+function generarLlaves(n, tema){
+    llavesMapa = [];
+    let lista = (tema === "virus") ? posicionesLlavesVirus : posicionesLlaves;
+    for(let i=0;i<n;i++){
+        let p = lista[i % lista.length];
+        llavesMapa.push({ x:p.x, y:p.y, w:40, h:26, activa:true });
+    }
+}
+
+function prepararTema(data){
+    temaActual = temas[data.tema];
+    lasers = [];
+    firewalls = [];
+    servidores = [];
+    nodosIA = [];
+    conexionesNN = [];
+    impulsosNN = [];
+    zonasInfeccion = [];
+    nucleo = null;
+    codigoDesbloqueado = false;
+    codigoIngresado = false;
+    codigoSecreto = "";
+    document.getElementById("avisoCodigo").style.display = "none";
+    canvas.style.borderColor = temaActual.borde;
+    canvas.style.boxShadow = `0 0 20px ${temaActual.glow}, 0 0 50px ${temaActual.glow}`;
+
+    if(data.tema === "servidores"){
+        servidores = [
+            {x:260,y:120,w:70,h:110},{x:260,y:380,w:70,h:110},
+            {x:480,y:80,w:70,h:110},{x:480,y:400,w:70,h:110},
+            {x:700,y:150,w:70,h:110}
+        ];
+    }
+    if(data.tema === "restringida"){
+        lasers = [
+            {x:200,y:240,w:80,h:8, on:true, timer:0, periodo:90},
+            {x:460,y:300,w:100,h:8, on:true, timer:30, periodo:70},
+            {x:740,y:200,w:90,h:8, on:true, timer:50, periodo:80},
+            {x:300,y:450,w:8,h:100, on:true, timer:10, periodo:100}
+        ];
+    }
+    if(data.tema === "firewall"){
+        firewalls = [
+            {x:280,y:250,w:120,h:18, abierto:false, timer:0, ciclo:120},
+            {x:480,y:180,w:18,h:140, abierto:false, timer:40, ciclo:100},
+            {x:680,y:300,w:120,h:18, abierto:true, timer:60, ciclo:110}
+        ];
+    }
+    if(data.tema === "nucleo"){
+        // Núcleo = capa profunda / activación central
+        nucleo = { x:470, y:250, r:48, label:"DEEP" };
+        // Capas: entrada → oculta → salida (como una red neuronal)
+        let entrada = [
+            {x:90,y:120,capa:0},{x:90,y:220,capa:0},{x:90,y:320,capa:0},{x:90,y:420,capa:0}
+        ];
+        let oculta = [
+            {x:300,y:140,capa:1},{x:300,y:260,capa:1},{x:300,y:390,capa:1},
+            {x:700,y:140,capa:1},{x:700,y:260,capa:1},{x:700,y:390,capa:1}
+        ];
+        let salida = [
+            {x:910,y:160,capa:2},{x:910,y:280,capa:2},{x:910,y:400,capa:2}
+        ];
+        nodosIA = entrada.concat(oculta, salida);
+        conexionesNN = [];
+        // conectar capas vecinas + al núcleo
+        entrada.forEach(a => {
+            oculta.filter(o => o.x < 400).forEach(b => conexionesNN.push({a,b}));
+            conexionesNN.push({a, b:{x:470+48,y:250+48}});
+        });
+        oculta.forEach(a => {
+            conexionesNN.push({a, b:{x:470+48,y:250+48}});
+            if(a.x > 400){
+                salida.forEach(b => conexionesNN.push({a,b}));
+            }
+        });
+        impulsosNN = [];
+        for(let i=0;i<10;i++){
+            let c = conexionesNN[i % conexionesNN.length];
+            impulsosNN.push({ c, t: Math.random(), vel: 0.008 + Math.random()*0.01 });
+        }
+    }
+    if(data.tema === "fantasma"){
+        codigoSecreto = generarCodigo();
+    }
+    if(data.tema === "virus" || data.tema === "brote" || data.tema === "supremo"){
+        zonasInfeccion = [
+            {x:300,y:200,w:80,h:80, pulso:0},
+            {x:600,y:350,w:90,h:70, pulso:20},
+            {x:500,y:80,w:70,h:70, pulso:40}
+        ];
+    }
+}
+
+function cargarNivel(n){
+    let data = niveles[n-1];
+    if(!data) return;
+
+    nivelActual = data.numero;
+    llavesNecesarias = data.llaves;
+    llaves = 0;
+    tiempo = 60;
+    vidas = (personaje && personaje.id === "guard") ? 4 : 3;
+    invencible = 60;
+    teclas = {};
+    jugador.x = 40; jugador.y = 40;
+    jugador.w = 42; jugador.h = 50;
+    jugador.vel = (personaje && personaje.id === "byte") ? 6.5 : 5.5;
+    puerta.x = 900; puerta.y = 500;
+
+    muros = (layouts[data.tema] || layouts.infiltracion).map(m => ({...m}));
+    prepararTema(data);
+    generarLlaves(data.llaves, data.tema);
+    generarEnemigos(data);
+    resetHabilidadesNivel();
+
+    document.getElementById("nivel").innerHTML = nivelActual;
+    document.getElementById("llaves").innerHTML = llaves + " / " + llavesNecesarias;
+    document.getElementById("tiempo").innerHTML = tiempo;
+    document.getElementById("vidas").innerHTML = vidas;
+    document.getElementById("puntos").innerHTML = puntos;
+    document.getElementById("nombreNivel").style.display = "block";
+    malwareNivel = malwares[data.malware] || malwares.virus;
+    document.getElementById("nombreNivel").innerHTML =
+        "NIVEL " + nivelActual + ": " + data.nombre.toUpperCase() +
+        " — ☣ " + malwareNivel.nombre + " — " + data.desc;
+    document.getElementById("nombreNivel").style.color = temaActual.glow;
+}
+
+function iniciar(){
+    if(!personaje){
+        alert("Elige un personaje primero");
+        return;
+    }
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("selectPersonaje").style.display = "none";
+    document.getElementById("nombrePerso").innerHTML = personaje.nombre;
+    document.getElementById("nombrePerso").style.color = personaje.color;
+    puntos = 0;
+    jugando = false;
+    if(tiempoTimer){ clearInterval(tiempoTimer); tiempoTimer = null; }
+    mostrarIntroVirus(1);
+}
+
+function crearTiempo(){
+    if(tiempoTimer) clearInterval(tiempoTimer);
+    tiempoTimer = setInterval(() => {
+        if(!jugando) return;
+        tiempo--;
+        document.getElementById("tiempo").innerHTML = tiempo;
+        if(tiempo <= 0) perder();
+    }, 1000);
+}
+
+function moverJugador(){
+    let dx=0, dy=0;
+    if(teclas["ArrowUp"]||teclas["w"]) dy -= jugador.vel;
+    if(teclas["ArrowDown"]||teclas["s"]) dy += jugador.vel;
+    if(teclas["ArrowLeft"]||teclas["a"]) dx -= jugador.vel;
+    if(teclas["ArrowRight"]||teclas["d"]) dx += jugador.vel;
+
+    anim.dir = dirDesdeInput(dx, dy);
+    let moving = false;
+
+    if(dx!==0){
+        let p = { x:jugador.x+dx, y:jugador.y, w:jugador.w, h:jugador.h };
+        p.x = Math.max(0, Math.min(p.x, canvas.width-jugador.w));
+        if(!chocaMuro(p)){ jugador.x = p.x; moving = true; }
+    }
+    if(dy!==0){
+        let p = { x:jugador.x, y:jugador.y+dy, w:jugador.w, h:jugador.h };
+        p.y = Math.max(0, Math.min(p.y, canvas.height-jugador.h));
+        if(!chocaMuro(p)){ jugador.y = p.y; moving = true; }
+    }
+    actualizarAnimacion(moving);
+
+    // Núcleo IA empuja si te acercas demasiado
+    if(nucleo){
+        let cx = nucleo.x + nucleo.r, cy = nucleo.y + nucleo.r;
+        let jx = jugador.x + jugador.w/2, jy = jugador.y + jugador.h/2;
+        let dxn = jx-cx, dyn = jy-cy;
+        let dist = Math.sqrt(dxn*dxn+dyn*dyn) || 1;
+        if(dist < nucleo.r + 40){
+            let fuerza = (nucleo.r + 40 - dist) * 0.15;
+            let nx = jugador.x + (dxn/dist)*fuerza;
+            let ny = jugador.y + (dyn/dist)*fuerza;
+            let px = {x:nx,y:jugador.y,w:jugador.w,h:jugador.h};
+            let py = {x:jugador.x,y:ny,w:jugador.w,h:jugador.h};
+            if(!chocaMuro(px) && nx>0 && nx<canvas.width-jugador.w) jugador.x = nx;
+            if(!chocaMuro(py) && ny>0 && ny<canvas.height-jugador.h) jugador.y = ny;
+        }
+    }
+}
+
+function moverEnemigos(){
+    let factor = ralentizarTimer > 0 ? 0.35 : 1;
+    if(ralentizarTimer > 0){
+        ralentizarTimer--;
+        if(ralentizarTimer === 0) actualizarHabHUD();
+    }
+    if(sombraTimer > 0){
+        sombraTimer--;
+        if(sombraTimer === 0) actualizarHabHUD();
+    }
+
+    enemigos.forEach(e => {
+        if(e.jefe){
+            let cx=e.x+e.w/2, cy=e.y+e.h/2;
+            let jx=jugador.x+jugador.w/2, jy=jugador.y+jugador.h/2;
+            let dx=jx-cx, dy=jy-cy, dist=Math.sqrt(dx*dx+dy*dy)||1;
+            e.x += (dx/dist)*e.velocidadJefe * factor;
+            e.y += (dy/dist)*e.velocidadJefe * factor;
+            e.x = Math.max(20, Math.min(e.x, canvas.width-e.w-20));
+            e.y = Math.max(20, Math.min(e.y, canvas.height-e.h-20));
+            return;
+        }
+        if(e.dir==="h"){
+            e.x += e.velX * factor;
+            if(e.x>920||e.x<80) e.velX*=-1;
+        } else {
+            e.y += e.velY * factor;
+            if(e.y>540||e.y<40) e.velY*=-1;
+        }
+        if(e.velX===0 && e.dir==="h") e.velX=3;
+        if(e.velY===0 && e.dir==="v") e.velY=2;
+    });
+}
+
+function actualizarMecanicas(){
+    // Láseres zona restringida
+    lasers.forEach(l => {
+        l.timer++;
+        if(l.timer >= l.periodo){
+            l.timer = 0;
+            l.on = !l.on;
+        }
+        if(l.on && invencible===0 && colision(jugador,l)){
+            danio(1);
+        }
+    });
+
+    // Firewalls abren/cierran
+    firewalls.forEach(f => {
+        f.timer++;
+        if(f.timer >= f.ciclo){
+            f.timer = 0;
+            f.abierto = !f.abierto;
+        }
+    });
+
+    // Infección
+    zonasInfeccion.forEach(z => {
+        z.pulso++;
+        if(invencible===0 && colision(jugador,z)){
+            if(z.pulso % 40 === 0) danio(1);
+        }
+    });
+}
+
+function danio(n){
+    anim.hurtTimer = 40;
+    anim.estado = "hurt";
+    anim.frame = 0;
+    // FIREWALL: escudo bloquea 1 golpe
+    if(escudoActivo){
+        escudoActivo = false;
+        invencible = 90;
+        jugador.x = 50; jugador.y = 50;
+        teclas = {};
+        actualizarHabHUD();
+        return;
+    }
+    vidas -= n;
+    document.getElementById("vidas").innerHTML = vidas;
+    jugador.x = 50; jugador.y = 50;
+    invencible = 90;
+    teclas = {};
+    if(vidas <= 0) perder();
+}
+
+function actualizar(){
+    if(invencible > 0) invencible--;
+    actualizarMecanicas();
+
+    enemigos.forEach(e => {
+        if(invencible > 0) return;
+        let hit = e.jefe
+            ? { x:e.x+e.w*0.2, y:e.y+e.h*0.15, w:e.w*0.6, h:e.h*0.55 }
+            : e;
+        if(colision(jugador, hit)) danio(1);
+    });
+
+    llavesMapa.forEach(l => {
+        if(l.activa && colision(jugador,{x:l.x,y:l.y,w:l.w,h:l.h})){
+            l.activa = false;
+            llaves++;
+            puntos += 100;
+            if(personaje && personaje.id === "byte") puntos += 50; // BYTE bonus
+            document.getElementById("llaves").innerHTML = llaves + " / " + llavesNecesarias;
+            document.getElementById("puntos").innerHTML = puntos;
+            sonidoClick();
+
+            // Código Fantasma: al tener todas las llaves se revela el código
+            if(niveles[nivelActual-1].tema === "fantasma" && llaves >= llavesNecesarias && !codigoDesbloqueado){
+                codigoDesbloqueado = true;
+                abrirPanelCodigo();
+            }
+        }
+    });
+
+    let puedeSalir = llaves >= llavesNecesarias;
+    if(niveles[nivelActual-1].tema === "fantasma"){
+        puedeSalir = puedeSalir && codigoIngresado;
+    }
+
+    if(puedeSalir && colision(jugador, puerta)){
+        ganar();
+    }
+
+    // Aviso cerca de la puerta fantasma sin código
+    if(niveles[nivelActual-1].tema === "fantasma" && llaves >= llavesNecesarias && !codigoIngresado){
+        let aviso = document.getElementById("avisoCodigo");
+        aviso.style.display = "block";
+        aviso.innerHTML = codigoDesbloqueado
+            ? "Código revelado: pulsa aquí o ve a la puerta → escribe el código"
+            : "Recoge todas las llaves para revelar el código fantasma";
+        if(codigoDesbloqueado && colision(jugador, {x:puerta.x-30,y:puerta.y-30,w:puerta.w+60,h:puerta.h+60})){
+            abrirPanelCodigo();
+        }
+    }
+}
+
+function abrirPanelCodigo(){
+    if(panelCodigoAbierto || codigoIngresado) return;
+    panelCodigoAbierto = true;
+    jugando = false;
+    teclas = {};
+    document.getElementById("mobileControls").classList.remove("active");
+    document.getElementById("codigoMostrado").innerHTML = codigoSecreto;
+    // BYTE: pista con primera letra
+    if(personaje && personaje.id === "byte"){
+        document.getElementById("codigoError").innerHTML =
+            "Pista BYTE: empieza con <b>" + codigoSecreto[0] + "</b> _ _ _";
+        document.getElementById("codigoError").style.color = "#33ff66";
+    } else {
+        document.getElementById("codigoError").innerHTML = "";
+        document.getElementById("codigoError").style.color = "#ff5555";
+    }
+    document.getElementById("codigoInput").value = "";
+    document.getElementById("panelCodigo").style.display = "flex";
+    setTimeout(() => document.getElementById("codigoInput").focus(), 50);
+}
+
+function verificarCodigo(){
+    let val = document.getElementById("codigoInput").value.trim().toUpperCase();
+    if(val === codigoSecreto){
+        codigoIngresado = true;
+        panelCodigoAbierto = false;
+        document.getElementById("panelCodigo").style.display = "none";
+        document.getElementById("mobileControls").classList.add("active");
+        document.getElementById("avisoCodigo").innerHTML = "✔ Código correcto — la puerta está abierta";
+        document.getElementById("avisoCodigo").style.color = "#00ff88";
+        puntos += 200;
+        document.getElementById("puntos").innerHTML = puntos;
+        sonidoClick();
+        jugando = true;
+        loop();
+    } else {
+        document.getElementById("codigoError").innerHTML = "Código incorrecto. Intenta de nuevo.";
+    }
+}
+
+function dibujarFondo(){
+    ctx.fillStyle = temaActual.bg;
+    ctx.fillRect(0,0,1000,600);
+
+    let t = niveles[nivelActual-1].tema;
+
+    if(t === "servidores"){
+        servidores.forEach(s => {
+            ctx.fillStyle = "#0a3048";
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.strokeStyle = "#44aaff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(s.x, s.y, s.w, s.h);
+            for(let i=0;i<5;i++){
+                ctx.fillStyle = (animFrame+i*10)%40 < 20 ? "#00ff88" : "#004422";
+                ctx.fillRect(s.x+10, s.y+12+i*18, 12, 8);
+                ctx.fillStyle = (animFrame+i*7)%30 < 15 ? "#ffaa00" : "#442200";
+                ctx.fillRect(s.x+30, s.y+12+i*18, 12, 8);
+                ctx.fillStyle = "#2288cc";
+                ctx.fillRect(s.x+50, s.y+12+i*18, 10, 8);
+            }
+            ctx.fillStyle = "rgba(68,170,255,0.15)";
+            ctx.beginPath();
+            ctx.arc(s.x+s.w/2, s.y+s.h/2, 55+Math.sin(animFrame*0.1)*4, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.fillStyle = "#44aaff";
+        ctx.font = "bold 14px Courier New";
+        ctx.fillText("SERVIDORES BLINDADOS", 20, 24);
+    }
+
+    if(t === "restringida"){
+        // Cinta de peligro
+        for(let i=0;i<20;i++){
+            ctx.fillStyle = i%2===0 ? "#ffcc00" : "#111";
+            ctx.fillRect(i*50, 0, 50, 12);
+            ctx.fillRect(i*50, 588, 50, 12);
+        }
+        ctx.fillStyle = "#ff4400";
+        ctx.font = "bold 16px Courier New";
+        ctx.fillText("⚠ ZONA RESTRINGIDA — ACCESO DENEGADO", 280, 30);
+        lasers.forEach(l => {
+            if(!l.on) return;
+            ctx.shadowColor = "#ff0000";
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = "#ff2222";
+            ctx.fillRect(l.x, l.y, l.w, l.h);
+            ctx.shadowBlur = 0;
+        });
+    }
+
+    if(t === "firewall"){
+        ctx.fillStyle = "#ff6600";
+        ctx.font = "bold 15px Courier New";
+        ctx.fillText("🔥 FIREWALL ACTIVO — ESPERA LA APERTURA", 300, 28);
+        firewalls.forEach(f => {
+            if(f.abierto){
+                ctx.strokeStyle = "rgba(255,150,0,0.4)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6,6]);
+                ctx.strokeRect(f.x, f.y, f.w, f.h);
+                ctx.setLineDash([]);
+            } else {
+                let grad = ctx.createLinearGradient(f.x,f.y,f.x+f.w,f.y+f.h);
+                grad.addColorStop(0,"#ff2200");
+                grad.addColorStop(0.5,"#ffaa00");
+                grad.addColorStop(1,"#ff2200");
+                ctx.fillStyle = grad;
+                ctx.shadowColor = "#ff6600";
+                ctx.shadowBlur = 20;
+                ctx.fillRect(f.x, f.y, f.w, f.h);
+                ctx.shadowBlur = 0;
+            }
+        });
+    }
+
+    if(t === "nucleo" && nucleo){
+        let pulso = Math.sin(animFrame*0.08)*6;
+        let cx = nucleo.x+nucleo.r, cy = nucleo.y+nucleo.r;
+
+        // Sinapsis (conexiones entre neuronas)
+        conexionesNN.forEach(con => {
+            ctx.strokeStyle = "rgba(140,100,220,0.28)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(con.a.x, con.a.y);
+            ctx.lineTo(con.b.x, con.b.y);
+            ctx.stroke();
+        });
+
+        // Impulsos viajando por la red (como señales neuronales)
+        impulsosNN.forEach(imp => {
+            imp.t += imp.vel;
+            if(imp.t > 1) imp.t = 0;
+            let x = imp.c.a.x + (imp.c.b.x - imp.c.a.x) * imp.t;
+            let y = imp.c.a.y + (imp.c.b.y - imp.c.a.y) * imp.t;
+            ctx.fillStyle = "#ffe066";
+            ctx.beginPath();
+            ctx.arc(x, y, 3.5, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // Neuronas por capa
+        nodosIA.forEach((n, i) => {
+            let act = 0.5 + 0.5 * Math.sin(animFrame*0.1 + i);
+            let col = n.capa === 0 ? "#66ccff" : (n.capa === 1 ? "#cc88ff" : "#88ffaa");
+            ctx.fillStyle = col;
+            ctx.globalAlpha = 0.55 + act*0.45;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 9 + act*3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = "rgba(255,255,255,0.35)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 9 + act*3, 0, Math.PI*2);
+            ctx.stroke();
+        });
+
+        // Núcleo / capa profunda
+        let g = ctx.createRadialGradient(cx,cy,8,cx,cy,nucleo.r+pulso);
+        g.addColorStop(0,"#ffffff");
+        g.addColorStop(0.35,"#bb77ff");
+        g.addColorStop(1,"rgba(60,0,100,0.15)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(cx,cy,nucleo.r+pulso,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba(200,160,255,0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx,cy,nucleo.r+pulso,0,Math.PI*2); ctx.stroke();
+
+        ctx.fillStyle = "#f0e0ff";
+        ctx.font = "bold 12px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("CAPA", cx, cy-4);
+        ctx.fillText("PROFUNDA", cx, cy+12);
+        ctx.textAlign = "left";
+
+        // Etiquetas de capas
+        ctx.font = "bold 11px Courier New";
+        ctx.fillStyle = "#66ccff";
+        ctx.fillText("ENTRADA", 55, 70);
+        ctx.fillStyle = "#cc88ff";
+        ctx.fillText("OCULTA", 270, 70);
+        ctx.fillText("OCULTA", 670, 70);
+        ctx.fillStyle = "#88ffaa";
+        ctx.fillText("SALIDA", 875, 70);
+
+        ctx.fillStyle = "#d0b0ff";
+        ctx.font = "bold 13px Courier New";
+        ctx.fillText("REDES NEURONALES — LA IA IMITA EL CEREBRO  ·  evita la activación central", 160, 28);
+    }
+
+    if(t === "fantasma"){
+        ctx.fillStyle = "rgba(100,255,200,0.08)";
+        for(let i=0;i<8;i++){
+            let gx = (animFrame*2 + i*130) % 1100 - 50;
+            let gy = 80 + Math.sin(animFrame*0.05+i)*40 + i*50;
+            ctx.beginPath(); ctx.arc(gx, gy, 20, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.fillStyle = "#88ffcc";
+        ctx.font = "bold 14px Courier New";
+        ctx.fillText("👻 CÓDIGO FANTASMA — RECOGE LLAVES PARA REVELAR EL CÓDIGO", 180, 28);
+    }
+
+    if(t === "virus" || t === "brote" || t === "supremo"){
+        zonasInfeccion.forEach(z => {
+            let a = 0.15 + Math.sin(z.pulso*0.1)*0.08;
+            ctx.fillStyle = t==="virus" ? `rgba(255,50,180,${a})` : `rgba(255,20,20,${a})`;
+            ctx.fillRect(z.x, z.y, z.w, z.h);
+            ctx.strokeStyle = t==="virus" ? "#ff44aa" : "#ff2222";
+            ctx.strokeRect(z.x, z.y, z.w, z.h);
+        });
+        ctx.fillStyle = t==="virus" ? "#ff66cc" : "#ff3333";
+        ctx.font = "bold 15px Courier New";
+        if(t==="virus") ctx.fillText("☣ VIRUS DETECTADO — ¡CUIDADO CON EL JEFE!", 280, 28);
+        if(t==="brote") ctx.fillText("☣ BROTE VIRAL — EL VIRUS MUTÓ", 320, 28);
+        if(t==="supremo") ctx.fillText("☠ JEFE VIRUS SUPREMO — ÚLTIMO ESCAPE", 280, 28);
+    }
+
+    if(t === "infiltracion"){
+        ctx.fillStyle = "#00ffff";
+        ctx.font = "bold 14px Courier New";
+        ctx.fillText(">> INFILTRACIÓN EN CURSO...", 20, 24);
+    }
+}
+
+function dibujarMalware(e){
+    let key = e.malware || (malwareNivel && malwareNivel.id) || "virus";
+    let img = imgsMalware[key];
+    let bounce = Math.sin(animFrame * 0.12 + (e.x||0)*0.01) * (e.jefe ? 2 : 1);
+
+    // Sin resplandor / glow
+    ctx.shadowBlur = 0;
+    if(e.fantasma) ctx.globalAlpha = 0.55 + Math.sin(animFrame*0.15)*0.15;
+
+    if(img && img.complete && img.naturalWidth > 0){
+        ctx.drawImage(img, e.x, e.y + bounce, e.w, e.h);
+    } else {
+        ctx.fillStyle = "#ff3355";
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+    }
+    ctx.globalAlpha = 1;
+}
+
+function dibujar(){
+    animFrame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    dibujarFondo();
+
+    // Muros
+    muros.forEach(m => {
+        ctx.fillStyle = temaActual.muro;
+        ctx.shadowColor = temaActual.glow;
+        ctx.shadowBlur = 12;
+        ctx.fillRect(m.x,m.y,m.w,m.h);
+    });
+    ctx.shadowBlur = 0;
+
+    // Llaves
+    llavesMapa.forEach(l => {
+        if(!l.activa) return;
+        ctx.shadowColor = "#ffdd00";
+        ctx.shadowBlur = 12;
+        if(imgLlave.complete && imgLlave.naturalWidth>0){
+            ctx.drawImage(imgLlave, l.x, l.y, l.w, l.h);
+        } else {
+            ctx.fillStyle = "#ffdd00";
+            ctx.fillRect(l.x,l.y,l.w,l.h);
+        }
+    });
+    ctx.shadowBlur = 0;
+
+    // Puerta
+    let puertaLista = llaves >= llavesNecesarias;
+    if(niveles[nivelActual-1].tema === "fantasma") puertaLista = puertaLista && codigoIngresado;
+    ctx.fillStyle = puertaLista ? "#00ff66" : "#335533";
+    ctx.shadowColor = puertaLista ? "#00ff66" : "transparent";
+    ctx.shadowBlur = puertaLista ? 20 : 0;
+    ctx.fillRect(puerta.x, puerta.y, puerta.w, puerta.h);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#fff";
+    ctx.font = "10px Courier New";
+    ctx.fillText(puertaLista ? "EXIT" : "LOCK", puerta.x+8, puerta.y+35);
+
+    // Jugador grande y visible
+    if(invencible===0 || Math.floor(invencible/5)%2===0){
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = sombraTimer > 0 ? 0.55 : 1;
+        // sprite ~2x el hitbox para que se vea bien
+        dibujarPersonajeSheet(jugador.x - 18, jugador.y - 30, 78, 92);
+        ctx.globalAlpha = 1;
+        if(escudoActivo){
+            let cx = jugador.x + jugador.w / 2;
+            let cy = jugador.y + jugador.h / 2 - 8;
+            let r = 48;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = "#88aaff";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r - 6, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(150,120,255,0.55)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // SCAN: radar de enemigos cercanos
+    if(personaje && personaje.id === "scan"){
+        enemigos.forEach(e => {
+            let dx=(e.x+e.w/2)-(jugador.x+jugador.w/2);
+            let dy=(e.y+e.h/2)-(jugador.y+jugador.h/2);
+            let d=Math.sqrt(dx*dx+dy*dy);
+            if(d < 220){
+                ctx.strokeStyle = "rgba(68,136,255,0.7)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(jugador.x+jugador.w/2, jugador.y+jugador.h/2);
+                ctx.lineTo(e.x+e.w/2, e.y+e.h/2);
+                ctx.stroke();
+            }
+        });
+    }
+
+    // Enemigos = malware del nivel
+    enemigos.forEach(e => dibujarMalware(e));
+
+    // Red Oscura: niebla (solo ves cerca del jugador)
+    if(niveles[nivelActual-1].tema === "oscura"){
+        let jx = jugador.x + jugador.w/2;
+        let jy = jugador.y + jugador.h/2;
+        let radio = (personaje && personaje.id === "scan") ? 210 : 140;
+        ctx.fillStyle = "rgba(0,0,0,0.88)";
+        ctx.beginPath();
+        ctx.rect(0, 0, 1000, 600);
+        ctx.arc(jx, jy, radio, 0, Math.PI * 2, true);
+        ctx.fill("evenodd");
+
+        // borde suave del círculo de visión
+        let g = ctx.createRadialGradient(jx, jy, radio * 0.7, jx, jy, radio);
+        g.addColorStop(0, "rgba(0,0,0,0)");
+        g.addColorStop(1, "rgba(0,0,0,0.55)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(jx, jy, radio, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#aa88ff";
+        ctx.font = "bold 14px Courier New";
+        ctx.fillText("RED OSCURA — VISIBILIDAD LIMITADA", 300, 28);
+    }
+}
+
+function perder(){
+    jugando = false; teclas = {};
+    if(tiempoTimer) clearInterval(tiempoTimer);
+    canvas.style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.getElementById("mobileControls").classList.remove("active");
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("avisoCodigo").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    document.getElementById("gameOver").style.display = "flex";
+}
+
+function ganar(){
+    jugando = false; teclas = {};
+    guardarRecord(); sonidoClick();
+    puntos += tiempo * 10;
+    document.getElementById("puntos").innerHTML = puntos;
+    document.getElementById("avisoCodigo").style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.getElementById("mobileControls").classList.remove("active");
+
+    if(nivelActual >= niveles.length){
+        if(tiempoTimer) clearInterval(tiempoTimer);
+        canvas.style.display = "none";
+        document.getElementById("hud").style.display = "none";
+        document.getElementById("nombreNivel").style.display = "none";
+        document.getElementById("habHUD").style.display = "none";
+        document.getElementById("victoria").style.display = "flex";
+        return;
+    }
+
+    canvas.style.display = "none";
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    let sig = niveles[nivelActual];
+    document.getElementById("tituloNivel").innerHTML = "NIVEL " + nivelActual + " COMPLETADO";
+    document.getElementById("textoNivel").innerHTML =
+        niveles[nivelActual-1].nombre + " ✔<br>Siguiente: <b>" + sig.nombre + "</b><br>" +
+        "<span style='font-size:16px;color:#aaa'>" + sig.desc + "</span>" +
+        (sig.scary ? "<br>⚠ ¡JEFE VIRUS TOSCO!" :
+         sig.jefe ? "<br>⚠ ¡CUIDADO CON EL VIRUS!" : "");
+    document.getElementById("nivelCompleto").style.display = "flex";
+}
+
+function siguienteNivel(){
+    document.getElementById("nivelCompleto").style.display = "none";
+    jugando = false;
+    mostrarIntroVirus(nivelActual + 1);
+}
+
+function loop(){
+    if(!jugando) return;
+    moverJugador();
+    moverEnemigos();
+    actualizar();
+    dibujar();
+    requestAnimationFrame(loop);
+}
+
+let record = localStorage.getItem("recordHacker") || 0;
+function guardarRecord(){
+    if(puntos > record){
+        localStorage.setItem("recordHacker", puntos);
+        record = puntos;
+    }
+}
+const sonido = new AudioContext();
+function sonidoClick(){
+    if(sonido.state === "suspended") sonido.resume();
+    let osc = sonido.createOscillator();
+    osc.type = "square";
+    osc.frequency.value = 600;
+    osc.connect(sonido.destination);
+    osc.start();
+    osc.stop(sonido.currentTime + 0.1);
+}
+
+console.log("Escape del Hacker 2.0 · niveles temáticos");
+
+(function initNativo(){
+    const cap = window.Capacitor;
+    const esNativo = !!(cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform());
+    if(esNativo){
+        // En app Android no usamos service worker (Capacitor ya sirve los archivos locales).
+        const plugins = cap.Plugins || {};
+        if(plugins.StatusBar){
+            plugins.StatusBar.setBackgroundColor({ color: "#000000" }).catch(()=>{});
+            plugins.StatusBar.setStyle({ style: "DARK" }).catch(()=>{});
+        }
+        if(plugins.SplashScreen){
+            setTimeout(() => plugins.SplashScreen.hide().catch(()=>{}), 400);
+        }
+        return;
+    }
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./sw-escape.js").catch(() => {});
+        });
+    }
+})();
+</script>
+</body>
+</html>

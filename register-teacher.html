@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de maestro — Digital Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-visual">
+      <div class="auth-visual-content">
+        <a href="index.html" class="logo"><div class="logo-icon">🎓</div> Digital Academy</a>
+        <h2>Imparte asesorías</h2>
+        <p>Regístrate como maestro, elige tu materia y los niveles en los que deseas enseñar.</p>
+      </div>
+    </div>
+    <div class="auth-form-side">
+      <div class="auth-form-wrap">
+        <h1>Registro de maestro</h1>
+        <p class="subtitle">Tu solicitud será revisada por un administrador</p>
+
+        <div class="auth-type-tabs">
+          <a href="register.html" class="auth-type-tab">Estudiante</a>
+          <span class="auth-type-tab active">Profesor</span>
+        </div>
+
+        <form class="auth-form" id="teacher-form">
+          <div class="form-group">
+            <label for="name">Nombre completo</label>
+            <input type="text" id="name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label for="subject">Materia que impartes</label>
+            <select id="subject" required>
+              <option value="">Selecciona materia</option>
+              <option>Matemáticas</option>
+              <option>Ciencias</option>
+              <option>Español</option>
+              <option>Inglés</option>
+              <option>Programación</option>
+              <option>Historia</option>
+              <option>Física</option>
+              <option>Química</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Niveles que enseñas (elige al menos uno)</label>
+            <div class="level-checks">
+              <label><input type="checkbox" name="levels" value="primaria"> Primaria</label>
+              <label><input type="checkbox" name="levels" value="secundaria"> Secundaria</label>
+              <label><input type="checkbox" name="levels" value="preparatoria"> Preparatoria</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bio">Experiencia (opcional)</label>
+            <textarea id="bio" rows="3" placeholder="Años de experiencia, especialidad..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Enviar solicitud</button>
+        </form>
+        <p class="auth-switch">¿Eres estudiante? <a href="register.html">Regístrate aquí</a></p>
+        <p class="auth-switch"><a href="login.html">Iniciar sesión</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('teacher-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      const levels = [...document.querySelectorAll('input[name="levels"]:checked')].map(c => c.value);
+      if (!levels.length) { alert('Selecciona al menos un nivel'); btn.disabled = false; btn.textContent = 'Enviar solicitud'; return; }
+      try {
+        const data = await fetch('/api/teachers/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            subject: document.getElementById('subject').value,
+            levels,
+            bio: document.getElementById('bio').value
+          })
+        }).then(r => r.json());
+        if (data.error) throw new Error(data.error);
+        alert(data.message || 'Solicitud enviada');
+        window.location.href = 'login.html';
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Enviar solicitud';
+      }
+    });
+  </script>
+</body>
+</html>

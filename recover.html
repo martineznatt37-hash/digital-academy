@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar contraseña — Digital Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-visual">
+      <div class="auth-visual-content">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+          </div>
+          Digital Academy
+        </a>
+        <h2>Recupera tu acceso</h2>
+        <p>No te preocupes, le pasa a todos. Te enviaremos un enlace para restablecer tu contraseña de forma segura.</p>
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="auth-feature-icon">🔐</div>
+            <span>Proceso seguro y encriptado</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon">📧</div>
+            <span>Enlace enviado a tu correo</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon">⏱</div>
+            <span>El enlace expira en 30 minutos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-form-side">
+      <div class="auth-form-wrap">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+          </div>
+          Digital Academy
+        </a>
+        <h1>Recuperar contraseña</h1>
+        <p class="subtitle">Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña</p>
+
+        <form class="auth-form" id="recover-form">
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" placeholder="tu@email.com" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Enviar enlace de recuperación</button>
+        </form>
+
+        <p class="auth-footer-text"><a href="login.html">← Volver a iniciar sesión</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-widget">
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <div class="chat-panel-header-info">
+          <div class="chat-panel-avatar">🤖</div>
+          <div><strong>Asistente IA</strong><span>Disponible 24/7</span></div>
+        </div>
+        <button class="chat-close" aria-label="Cerrar chat"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="chat-panel-messages"></div>
+      <div class="chat-panel-input">
+        <input type="text" placeholder="Escribe tu mensaje..." aria-label="Mensaje">
+        <button aria-label="Enviar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+      </div>
+    </div>
+    <button class="chat-toggle" aria-label="Abrir chat"><span class="pulse-ring"></span><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+  </div>
+
+  <script src="js/chat.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

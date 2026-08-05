@@ -1,0 +1,1 @@
+{"cw": 96, "ch": 128, "dirs": ["s", "sw", "w", "nw", "n", "ne", "e", "se"], "anims": {"idle": 2, "walk": 4, "hurt": 2}, "maxF": 4}

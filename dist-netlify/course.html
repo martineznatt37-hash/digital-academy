@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curso — Digital Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/course.css">
+  <link rel="stylesheet" href="css/pet.css">
+</head>
+<body class="course-page">
+
+  <nav class="navbar scrolled">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
+        </div>
+        Digital Academy
+      </a>
+      <div class="nav-links">
+        <a href="index.html#cursos">Cursos</a>
+        <a href="index.html#asesorias">Asesorías</a>
+        <a href="profile.html">Mi perfil</a>
+      </div>
+      <div class="nav-actions">
+        <a href="login.html" class="btn btn-ghost btn-sm">Iniciar sesión</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Registrarse</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="course-hero">
+    <div class="course-hero-bg" id="course-hero-bg"></div>
+    <div class="container course-hero-content">
+      <span class="course-level-badge">Nivel</span>
+      <h1>Cargando curso...</h1>
+      <p></p>
+      <div class="course-meta-info"></div>
+    </div>
+  </header>
+
+  <div class="container course-layout">
+    <main class="course-main">
+      <div class="course-actions">
+        <button id="enroll-btn" class="btn btn-primary">Inscribirme gratis</button>
+        <button id="favorite-btn" class="btn btn-outline">☆ Agregar a favoritos</button>
+      </div>
+
+      <div class="course-progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+        <div class="course-progress-text">0% completado</div>
+      </div>
+
+      <div class="course-intro" id="course-intro">
+        <h3>¿Qué aprenderás?</h3>
+        <div class="course-intro-content"></div>
+        <button id="start-course-btn" class="btn btn-primary">Comenzar curso</button>
+      </div>
+
+      <div class="lesson-viewer">
+        <h2>Lección</h2>
+        <div class="lesson-content"></div>
+        <div class="lesson-nav">
+          <button id="prev-lesson" class="btn btn-outline btn-sm">← Anterior</button>
+          <button id="start-exam-btn" class="btn btn-primary btn-sm">Presentar examen</button>
+          <button id="next-lesson" class="btn btn-outline btn-sm" style="display:none">Siguiente →</button>
+        </div>
+      </div>
+
+      <div class="exam-viewer" id="exam-viewer" style="display:none">
+        <div class="exam-header">
+          <h2 id="exam-title">Examen</h2>
+          <p class="exam-info">5 preguntas sobre el contenido del módulo · Necesitas <strong>8/10</strong> para aprobar</p>
+          <p id="exam-topics" class="exam-topics" style="display:none"></p>
+        </div>
+        <form id="exam-form" class="exam-form"></form>
+        <div class="exam-actions">
+          <button type="button" id="back-to-lesson" class="btn btn-outline btn-sm">← Volver a la lección</button>
+          <button type="submit" form="exam-form" class="btn btn-primary btn-sm">Enviar examen</button>
+        </div>
+        <div id="exam-result" class="exam-result" style="display:none"></div>
+      </div>
+    </main>
+
+    <aside class="course-sidebar">
+      <h3>Contenido del curso</h3>
+      <div class="lesson-list"></div>
+    </aside>
+  </div>
+
+  <div class="chat-widget">
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <div class="chat-panel-header-info">
+          <div class="chat-panel-avatar">🤖</div>
+          <div><strong>IA educativa</strong><span>Explica paso a paso</span></div>
+        </div>
+        <button class="chat-close" aria-label="Cerrar chat"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="chat-panel-messages"></div>
+      <div class="chat-quick-actions">
+        <button class="chat-quick-btn">Explícame paso a paso</button>
+        <button class="chat-quick-btn">Tengo una duda</button>
+      </div>
+      <div class="chat-panel-input">
+        <input type="text" placeholder="Escribe tu mensaje..." aria-label="Mensaje">
+        <button aria-label="Enviar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+      </div>
+    </div>
+    <button class="chat-toggle" aria-label="Abrir chat"><span class="pulse-ring"></span><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+  </div>
+
+  <div class="review-modal-overlay" id="review-modal" style="display:none">
+    <div class="review-modal">
+      <h2>🎓 ¡Completaste el curso!</h2>
+      <p>Comparte tu opinión para ayudar a otros estudiantes.</p>
+      <div class="review-stars" id="review-stars">
+        <button type="button" data-r="1">★</button>
+        <button type="button" data-r="2">★</button>
+        <button type="button" data-r="3">★</button>
+        <button type="button" data-r="4">★</button>
+        <button type="button" data-r="5">★</button>
+      </div>
+      <textarea id="review-comment" rows="4" placeholder="¿Qué te pareció el curso? ¿Qué aprendiste?" maxlength="500"></textarea>
+      <div class="review-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="review-skip">Después</button>
+        <button type="button" class="btn btn-primary btn-sm" id="review-submit">Publicar opinión</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/pet.js"></script>
+  <script src="js/course.js"></script>
+  <script>window.API.updateNavAuth();</script>
+</body>
+</html>

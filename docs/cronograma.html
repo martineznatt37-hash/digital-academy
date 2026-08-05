@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma — Digital Academy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #1a1a2e;
+      background: #f8f9fc;
+      line-height: 1.5;
+      padding: 2rem;
+    }
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    header {
+      background: linear-gradient(135deg, #1a5f4a, #2d8a6e);
+      color: #fff;
+      padding: 2rem 2.5rem;
+    }
+    header h1 { font-size: 1.75rem; margin-bottom: .5rem; }
+    header p { opacity: .9; font-size: .95rem; }
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      margin-top: 1.25rem;
+    }
+    .meta-item {
+      background: rgba(255,255,255,.15);
+      padding: .5rem 1rem;
+      border-radius: 8px;
+      font-size: .875rem;
+    }
+    .meta-item strong { display: block; font-size: 1.1rem; }
+    .content { padding: 2rem 2.5rem; }
+    h2 {
+      color: #1a5f4a;
+      font-size: 1.25rem;
+      margin: 2rem 0 1rem;
+      padding-bottom: .5rem;
+      border-bottom: 2px solid #e8f5f0;
+    }
+    h2:first-child { margin-top: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .875rem;
+      margin-bottom: 1.5rem;
+    }
+    th, td {
+      padding: .65rem .75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f0f7f4;
+      color: #1a5f4a;
+      font-weight: 600;
+    }
+    tr:hover td { background: #fafcfb; }
+    .badge {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .phase-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .5rem;
+      margin: 1.5rem 0;
+    }
+    .phase {
+      text-align: center;
+      padding: 1rem .5rem;
+      border-radius: 8px;
+      font-size: .8rem;
+    }
+    .phase-1 { background: #dbeafe; color: #1e40af; }
+    .phase-2 { background: #d1fae5; color: #065f46; }
+    .phase-3 { background: #fef3c7; color: #92400e; }
+    .phase-4 { background: #ede9fe; color: #5b21b6; }
+    .phase strong { display: block; font-size: .95rem; margin-bottom: .25rem; }
+    .gantt {
+      background: #f8f9fc;
+      padding: 1.25rem;
+      border-radius: 8px;
+      font-family: 'Consolas', monospace;
+      font-size: .75rem;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.6;
+    }
+    .delivery {
+      background: linear-gradient(135deg, #1a5f4a, #2d8a6e);
+      color: #fff;
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-top: 2rem;
+    }
+    .delivery h3 { font-size: 1.5rem; margin-bottom: .5rem; }
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+    }
+    .progress-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .85rem;
+    }
+    .progress-card span { float: right; color: #065f46; font-weight: 700; }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #6b7280;
+      font-size: .8rem;
+      border-top: 1px solid #eee;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>📅 Cronograma del Proyecto</h1>
+      <p>Plataforma web educativa — Digital Academy</p>
+      <div class="meta">
+        <div class="meta-item"><strong>4 meses</strong>Duración total</div>
+        <div class="meta-item"><strong>29 mar 2026</strong>Inicio</div>
+        <div class="meta-item"><strong>29 jul 2026</strong>Entrega final</div>
+        <div class="meta-item"><strong>100%</strong>Avance total</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <h2>Fases del proyecto</h2>
+      <div class="phase-bar">
+        <div class="phase phase-1"><strong>Fase 1</strong>Mar–Abr<br>Planificación<br>✅ 100%</div>
+        <div class="phase phase-2"><strong>Fase 2</strong>Abr–May<br>Backend + Auth<br>✅ 100%</div>
+        <div class="phase phase-3"><strong>Fase 3</strong>May–Jun<br>Funciones avanzadas<br>✅ 100%</div>
+        <div class="phase phase-4"><strong>Fase 4</strong>Jun–Jul<br>Pruebas + entrega<br>✅ 100%</div>
+      </div>
+
+      <h2>Fase 1 — Planificación y diseño (29 mar – 28 abr)</h2>
+      <table>
+        <thead><tr><th>Actividad</th><th>Inicio</th><th>Fin</th><th>Avance</th></tr></thead>
+        <tbody>
+          <tr><td>Análisis de requerimientos</td><td>29 mar</td><td>4 abr</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Definición de niveles educativos</td><td>5 abr</td><td>8 abr</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Arquitectura del sistema</td><td>9 abr</td><td>14 abr</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Wireframes y diseño UI/UX</td><td>15 abr</td><td>21 abr</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Stack tecnológico y estructura</td><td>22 abr</td><td>28 abr</td><td><span class="badge">100%</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fase 2 — Backend, autenticación y cursos (29 abr – 28 may)</h2>
+      <table>
+        <thead><tr><th>Actividad</th><th>Inicio</th><th>Fin</th><th>Avance</th></tr></thead>
+        <tbody>
+          <tr><td>Servidor Express y API REST</td><td>29 abr</td><td>3 may</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Base de datos SQLite</td><td>4 may</td><td>8 may</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Registro y login con JWT</td><td>9 may</td><td>16 may</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Páginas de autenticación</td><td>17 may</td><td>20 may</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Catálogo de cursos con contenido</td><td>21 may</td><td>28 may</td><td><span class="badge">100%</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fase 3 — Perfil, asesorías y chat IA (29 may – 28 jun)</h2>
+      <table>
+        <thead><tr><th>Actividad</th><th>Inicio</th><th>Fin</th><th>Avance</th></tr></thead>
+        <tbody>
+          <tr><td>Perfil de usuario en tiempo real</td><td>29 may</td><td>4 jun</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Registro de horas de estudio</td><td>5 jun</td><td>8 jun</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Gráficos de progreso</td><td>9 jun</td><td>12 jun</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Sistema de asesorías</td><td>13 jun</td><td>17 jun</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Panel de maestros</td><td>18 jun</td><td>20 jun</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Chat con asistente IA</td><td>21 jun</td><td>28 jun</td><td><span class="badge">100%</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fase 4 — Pruebas, documentación y entrega (29 jun – 29 jul)</h2>
+      <table>
+        <thead><tr><th>Actividad</th><th>Inicio</th><th>Fin</th><th>Avance</th></tr></thead>
+        <tbody>
+          <tr><td>Pruebas de integración</td><td>29 jun</td><td>7 jul</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Corrección de errores y optimización</td><td>8 jul</td><td>12 jul</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Diseño responsive</td><td>13 jul</td><td>15 jul</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Documentación y presentación</td><td>16 jul</td><td>22 jul</td><td><span class="badge">100%</span></td></tr>
+          <tr><td>Revisión final</td><td>26 jul</td><td>28 jul</td><td><span class="badge">100%</span></td></tr>
+          <tr><td><strong>ENTREGA FINAL</strong></td><td><strong>29 jul</strong></td><td><strong>29 jul</strong></td><td><span class="badge">100%</span></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Módulos — Estado final</h2>
+      <div class="progress-grid">
+        <div class="progress-card">🔐 Autenticación <span>100%</span></div>
+        <div class="progress-card">👤 Perfil de usuario <span>100%</span></div>
+        <div class="progress-card">⏱️ Horas de estudio <span>100%</span></div>
+        <div class="progress-card">📚 Cursos con contenido <span>100%</span></div>
+        <div class="progress-card">📅 Asesorías <span>100%</span></div>
+        <div class="progress-card">👨‍🏫 Panel de maestros <span>100%</span></div>
+        <div class="progress-card">🤖 Chat IA <span>100%</span></div>
+        <div class="progress-card">🎮 Gamificación <span>100%</span></div>
+        <div class="progress-card">📱 Diseño responsive <span>100%</span></div>
+        <div class="progress-card">📄 Documentación <span>100%</span></div>
+        <div class="progress-card">🚀 Servidor funcional <span>100%</span></div>
+        <div class="progress-card">🎓 Niveles educativos <span>100%</span></div>
+      </div>
+
+      <h2>Diagrama de Gantt</h2>
+      <div class="gantt">Actividad                    Mar    Abr    May    Jun    Jul
+                             |------|------|------|------|
+Planificación y diseño       ████████                          100%
+Backend y base de datos              ████████                  100%
+Login y registro                       ██████                    100%
+Cursos con contenido                     ██████                  100%
+Perfil y horas de estudio                      ██████            100%
+Asesorías y maestros                             ████            100%
+Chat IA                                          ████            100%
+Pruebas e integración                                  ████        100%
+Documentación y presentación                             ████      100%
+ENTREGA FINAL (29 jul)                                       ★    100%</div>
+
+      <div class="delivery">
+        <h3>🎯 Entrega Final — 29 de julio de 2026</h3>
+        <p>Proyecto completado al 100% · 4 meses de desarrollo · Todos los módulos operativos</p>
+      </div>
+    </div>
+
+    <footer>Digital Academy © 2026 — Cronograma de entrega académica</footer>
+  </div>
+</body>
+</html>

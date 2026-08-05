@@ -1,0 +1,15 @@
+# No subir al sitio estático de Netlify
+server/
+node_modules/
+escape-app/
+.git/
+.cursor/
+docs/*.docx
+docs/*.pptx
+docs/*.py
+scripts/
+terminals/
+*.md
+.env
+server/.env
+.netlify/

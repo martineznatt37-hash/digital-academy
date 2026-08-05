@@ -1,0 +1,20 @@
+# Digital Academy — despliegue en Netlify (frontend)
+# La API vive en Render; Netlify redirige /api/* al servidor.
+
+[build]
+  publish = "."
+  command = "echo Frontend listo"
+
+# Proxy: las peticiones /api van al backend en Render
+[[redirects]]
+  from = "/api/*"
+  to = "https://digital-academy-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Páginas HTML directas (sin SPA fallback)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"

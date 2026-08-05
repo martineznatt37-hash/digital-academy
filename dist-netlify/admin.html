@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — Digital Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="index.html" class="logo"><div class="logo-icon">🎓</div> Digital Academy</a>
+      <p class="admin-role">Panel de administrador</p>
+      <nav class="admin-nav">
+        <button class="admin-nav-btn active" data-tab="dashboard">📊 Resumen</button>
+        <button class="admin-nav-btn" data-tab="users">👥 Usuarios</button>
+        <button class="admin-nav-btn" data-tab="teachers">👨‍🏫 Maestros</button>
+        <button class="admin-nav-btn" data-tab="tutoring">📅 Asesorías</button>
+      </nav>
+      <button class="btn btn-outline btn-sm" id="admin-logout">Cerrar sesión</button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 id="admin-title">Resumen</h1>
+        <span id="admin-user"></span>
+      </header>
+      <div id="admin-toast" class="admin-toast" hidden></div>
+
+      <section class="admin-panel active" id="panel-dashboard">
+        <div class="admin-stats" id="admin-stats"></div>
+        <div class="admin-pending-actions" id="admin-pending-actions"></div>
+      </section>
+
+      <section class="admin-panel" id="panel-users">
+        <h2>Registros de usuarios</h2>
+        <p class="admin-panel-desc">Correo y contraseña de todas las cuentas registradas (estudiantes, maestros y administradores).</p>
+        <div class="admin-users-toolbar">
+          <input type="search" id="users-search" class="admin-search" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios">
+          <select id="users-role-filter" class="admin-select" aria-label="Filtrar por rol">
+            <option value="">Todos los roles</option>
+            <option value="student">Estudiantes</option>
+            <option value="teacher">Maestros</option>
+            <option value="admin">Administradores</option>
+          </select>
+        </div>
+        <div class="admin-table-wrap" id="users-table"></div>
+      </section>
+
+      <section class="admin-panel" id="panel-teachers">
+        <h2>Registros de maestros</h2>
+        <p class="admin-panel-desc">Acepta o rechaza las solicitudes de profesores que quieren impartir asesorías.</p>
+        <div class="admin-table-wrap" id="teachers-table"></div>
+      </section>
+
+      <section class="admin-panel" id="panel-tutoring">
+        <h2>Solicitudes de asesorías</h2>
+        <p class="admin-panel-desc">Acepta o rechaza las asesorías agendadas por los estudiantes. Al aceptar se envía notificación al estudiante y al maestro.</p>
+        <div class="admin-table-wrap" id="tutoring-table"></div>
+      </section>
+    </main>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,4504 @@
+<!DOCTYPE html>
+<!--
+  ESCAPE DEL HACKER 2.0
+  ---------------------
+  Juego web educativo de infiltración / ciberseguridad.
+  Estructura del archivo:
+    1) <head> + CSS  → pantallas (login, menú, HUD) y responsive móvil/PC
+    2) HTML          → capas de interfaz (login, menú, canvas, controles táctiles)
+    3) <script>      → lógica del juego, niveles, personajes, API de cuentas
+
+  Publicación:
+    - Frontend: carpeta escape-public → Netlify
+    - Backend:  server/routes/escape.js → Render (/api/escape)
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<!-- Viewport móvil: evita zoom accidental y respeta notch/safe-area -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#00ffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Escape Hacker">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/escape-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/escape-192.png">
+<title>Escape del Hacker 2.0</title>
+<style>
+/* ===== ESTILOS UI: login, menú, HUD, intro, controles táctiles, media queries ===== */
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Courier New', monospace; -webkit-tap-highlight-color:transparent; }
+html, body{ width:100%; height:100%; }
+body{ background:black; color:#00ffff; overflow:hidden; overscroll-behavior:none; }
+body::before{
+    content:""; position:absolute; width:100%; height:100%;
+    background:
+    linear-gradient(90deg, transparent 95%, rgba(0,255,255,.1) 100%),
+    linear-gradient(0deg, transparent 95%, rgba(0,255,255,.1) 100%);
+    background-size:40px 40px; animation:mover 10s linear infinite; pointer-events:none;
+}
+@keyframes mover{ from{transform:translateY(0)} to{transform:translateY(40px)} }
+#login,#menu{
+    position:absolute; width:100%; height:100vh; display:none;
+    justify-content:center; align-items:center; flex-direction:column;
+    background:radial-gradient(circle,#003344,#000); z-index:10;
+    padding:20px;
+}
+/* Nunca tapar la partida con el login (evita “me sacó” a mitad del nivel) */
+body.modo-juego #login,
+body.modo-juego #menu{
+    display:none !important;
+}
+#login h1,#menu h1{
+    font-size:70px; color:#00ffff;
+    text-shadow:0 0 10px cyan,0 0 30px cyan,0 0 60px cyan;
+    animation:glow 2s infinite alternate;
+    text-align:center;
+}
+@keyframes glow{ from{text-shadow:0 0 10px cyan} to{text-shadow:0 0 50px cyan} }
+#login p,#menu p{ margin:18px 0; font-size:20px; color:white; text-align:center; max-width:700px; }
+#loginBox{
+    width:min(420px, 92vw); background:rgba(0,20,30,.75);
+    border:2px solid #00ffff; border-radius:14px; padding:22px 20px;
+    box-shadow:0 0 24px rgba(0,255,255,.25); text-align:center;
+}
+#loginBox label{ display:block; color:#88ffff; margin-bottom:8px; font-size:14px; }
+#nombreJugador, #passJugador, #loginUsuario, #loginPass{
+    width:100%; font-size:20px; padding:12px 14px; margin-bottom:12px;
+    text-align:center; background:#0a1520; border:2px solid #226677;
+    color:#fff; border-radius:10px; outline:none;
+}
+#nombreJugador:focus, #passJugador:focus, #loginUsuario:focus, #loginPass:focus{
+    border-color:#00ffff; box-shadow:0 0 12px rgba(0,255,255,.35);
+}
+.charCard.locked{
+    opacity:.45; filter:grayscale(.8); cursor:not-allowed;
+}
+.charCard.locked:hover{ transform:none; box-shadow:none; border-color:#224455; }
+.charCard .lockTag{
+    color:#ff8899; font-size:11px; margin-top:4px;
+}
+#loginError{ color:#ff6677; min-height:22px; font-size:14px; margin-bottom:8px; }
+#loginExtra{ margin-top:12px; color:#99aabb; font-size:13px; }
+#menu .saludo{ color:#00ffaa; font-size:22px; margin-bottom:8px; text-shadow:0 0 10px #00ff88; }
+#menu .recordTxt{ color:#ffdd66; font-size:16px; margin:0 0 18px; }
+#btnMusica{
+    position:fixed; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right));
+    z-index:40; width:48px; height:48px; border-radius:50%;
+    background:rgba(0,30,40,.85); border:2px solid cyan; color:#00ffff;
+    font-size:20px; padding:0; box-shadow:0 0 12px rgba(0,255,255,.3);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+#btnMusica:hover{ transform:scale(1.08); background:#003344; }
+button{
+    padding:20px 60px; font-size:25px; font-weight:bold; border:none;
+    border-radius:10px; background:#00ffff; cursor:pointer; box-shadow:0 0 20px cyan;
+    touch-action:manipulation;
+}
+button:hover{ transform:scale(1.1); background:white; }
+button:active{ transform:scale(0.98); }
+#hud{
+    display:none; position:absolute; top:10px; width:100%;
+    justify-content:center; gap:24px; font-size:20px; font-weight:bold; z-index:5;
+}
+#nombreNivel{
+    display:none; position:absolute; top:42px; width:100%;
+    text-align:center; font-size:14px; color:#88ffff; z-index:5;
+    text-shadow:0 0 8px cyan;
+    padding:0 16px;
+    box-sizing:border-box;
+    pointer-events:none;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+canvas{
+    display:none; margin:auto; margin-top:70px;
+    background:radial-gradient(circle,#001b2b,#000);
+    border:3px solid cyan; box-shadow:0 0 20px cyan,0 0 50px cyan;
+    max-width:95vw; height:auto; aspect-ratio:10/6;
+}
+#gameOver,#victoria,#nivelCompleto,#panelCodigo{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:rgba(0,0,0,.95); justify-content:center; align-items:center;
+    flex-direction:column; z-index:20;
+}
+#gameOver h1{ font-size:80px; color:red; text-shadow:0 0 30px red; }
+#victoria h1{ font-size:80px; color:#00ff66; text-shadow:0 0 30px #00ff66; }
+#nivelCompleto h1{ font-size:50px; color:#00ffff; text-shadow:0 0 30px cyan; margin-bottom:20px; }
+#nivelCompleto p{ color:white; font-size:22px; margin-bottom:30px; text-align:center; }
+#panelCodigo h2{ color:#bb88ff; font-size:36px; margin-bottom:16px; text-shadow:0 0 20px #aa66ff; }
+#panelCodigo p{ color:#ddd; margin-bottom:12px; text-align:center; max-width:520px; }
+#panelCodigo .codigoReveal{
+    font-size:42px; letter-spacing:12px; color:#00ffaa;
+    text-shadow:0 0 20px #00ffaa; margin:18px 0; font-weight:bold;
+}
+#codigoInput{
+    font-size:28px; padding:12px 20px; letter-spacing:8px; text-align:center;
+    background:#111; border:2px solid #aa66ff; color:#fff; width:280px; margin:10px 0 20px;
+}
+#avisoCodigo{
+    display:none; position:absolute; top:64px; bottom:auto; width:100%; text-align:center;
+    color:#bb88ff; font-size:16px; z-index:6; text-shadow:0 0 10px #aa66ff;
+    pointer-events:none; padding:0 12px;
+}
+#selectPersonaje{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:radial-gradient(circle,#001a22,#000); z-index:15;
+    overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:24px 20px 40px;
+    flex-direction:column;
+}
+#selectPersonaje h1{
+    text-align:center; font-size:36px; color:#00ffff;
+    text-shadow:0 0 20px cyan; margin-bottom:8px;
+}
+#selectPersonaje .sub{
+    text-align:center; color:#aaa; margin-bottom:22px; font-size:16px;
+}
+#gridChars{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:14px;
+    max-width:1100px; margin:0 auto 20px; width:100%;
+}
+.charCard{
+    background:#0a1520; border:2px solid #224455; border-radius:12px;
+    padding:12px; cursor:pointer; text-align:center; transition:0.15s;
+}
+.charCard:hover{ border-color:#00ffff; transform:translateY(-3px); box-shadow:0 0 16px rgba(0,255,255,.35); }
+.charCard.selected{ border-color:#00ff88; box-shadow:0 0 22px rgba(0,255,136,.55); background:#0a2218; }
+.charCard img{
+    width:100%; height:250px; object-fit:contain;
+    image-rendering: auto;
+    background: transparent;
+    border-radius:8px;
+    filter: saturate(1.1) brightness(1.05);
+    padding:10px;
+}
+.charCard h3{ color:#00ffff; margin:8px 0 2px; font-size:18px; }
+.charCard .rol{ color:#88aacc; font-size:12px; margin-bottom:6px; }
+.charCard .hab{ color:#ffdd66; font-size:12px; line-height:1.35; min-height:34px; }
+#detalleChar{
+    text-align:center; color:#fff; margin:10px auto 18px; max-width:700px; font-size:15px; min-height:40px;
+}
+#accionesSelect{ display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+#accionesSelect button{ font-size:20px; padding:14px 36px; }
+#accionesSelect button:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+#habHUD{
+    display:none; position:absolute; top:38px; bottom:auto; right:16px; left:auto;
+    transform:none; color:#ffdd66; font-size:13px; z-index:6; text-shadow:0 0 8px #aa8800;
+    background:rgba(0,0,0,.55); padding:5px 10px; border-radius:8px; border:1px solid #665500;
+    pointer-events:none; max-width:280px; text-align:right;
+}
+/* En jefes: aviso y habilidad arriba, NO tapar la puerta EXIT */
+body.modo-pelea #habHUD{ top:38px; bottom:auto; right:16px; }
+body.modo-pelea #avisoCodigo{ top:118px; bottom:auto; }
+#bossHUD{
+    display:none; position:absolute; top:48px; left:50%; transform:translateX(-50%);
+    z-index:9; width:min(480px, 88vw); text-align:center; pointer-events:none;
+    background:rgba(8,0,12,.92); padding:8px 14px 10px;
+    border:2px solid #ff4466; border-radius:12px;
+    box-shadow:0 0 18px rgba(255,40,80,.35);
+}
+#bossHUD .bossName{
+    color:#ff6688; font-size:14px; font-weight:bold; letter-spacing:1px;
+    text-shadow:0 0 10px #ff2255; margin-bottom:6px;
+}
+#bossHUD .bossBarWrap{
+    height:14px; background:#220010; border:2px solid #ff4466; border-radius:8px;
+    overflow:hidden; box-shadow:0 0 12px rgba(255,40,80,.4);
+}
+#bossHUD .bossBar{
+    height:100%; width:100%; background:linear-gradient(90deg,#ff2244,#ff88aa);
+    transition:width .15s linear;
+}
+#bossHUD .bossHint{
+    color:#ffccdd; font-size:12px; margin-top:6px; line-height:1.35;
+}
+body.modo-pelea #nombreNivel{ display:none !important; }
+body.modo-pelea canvas{ margin-top: 118px; }
+#introVirus{
+    display:none; position:absolute; width:100%; height:100vh;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(120,0,80,.45), transparent 50%),
+        radial-gradient(circle,#0a0014,#000); z-index:25;
+    justify-content:center; align-items:center; flex-direction:column;
+    padding:24px; text-align:center; gap:14px;
+}
+#introVirus .virusCard{
+    background:linear-gradient(180deg, rgba(20,10,40,.95), rgba(0,0,0,.92));
+    border:2px solid #ff44aa; border-radius:16px;
+    box-shadow:0 0 30px rgba(255,50,150,.35), inset 0 0 40px rgba(255,0,120,.08);
+    padding:28px 36px; max-width:640px; width:92%;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+#introVirus img{
+    width:min(280px, 70vw); height:min(280px, 70vw); object-fit:contain;
+    image-rendering:auto; margin:12px auto 18px;
+    filter: none;
+    display:block;
+    background:transparent;
+}
+#introVirus h1{
+    font-size:38px; color:#ff66aa; text-shadow:0 0 18px #ff2288; margin:4px 0 8px;
+}
+#introVirus h2{ font-size:18px; color:#88ffff; margin-bottom:6px; letter-spacing:1px; }
+#introVirus p{ color:#e8e8e8; max-width:520px; font-size:17px; line-height:1.5; margin:0 auto 12px; }
+#introVirus .tip{
+    color:#ffdd77; font-size:15px; margin:10px auto 8px;
+    padding:10px 14px; border:1px dashed #aa8844; border-radius:8px;
+    background:rgba(80,50,0,.25); max-width:520px;
+}
+#introVirus button, #btnIntroEntrar{
+    flex-shrink:0; font-size:20px; padding:14px 40px;
+    width:min(92vw, 420px); z-index:26;
+}
+
+#panelHacker{
+    display:none; position:fixed; left:max(12px, env(safe-area-inset-left));
+    bottom:max(18px, env(safe-area-inset-bottom)); z-index:12;
+    align-items:flex-end; gap:10px; max-width:min(420px, 92vw);
+    pointer-events:none;
+}
+#panelHacker.visible{ display:flex; animation:bubbleIn .45s ease-out; }
+@keyframes bubbleIn{
+    from{ opacity:0; transform:translateY(24px) scale(.92); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+}
+#panelHacker .hackerAvatar{
+    width:92px; height:92px; object-fit:contain; flex-shrink:0;
+    filter:drop-shadow(0 0 12px rgba(255,40,60,.65));
+    background:rgba(30,0,0,.55);
+    border:2px solid #ff4455;
+    border-radius:12px;
+    padding:4px;
+    animation:hackerPulse 2.6s ease-in-out infinite;
+}
+@keyframes hackerPulse{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-5px); }
+}
+#panelHacker .bubble{
+    position:relative; background:rgba(18,0,6,.94);
+    border:2px solid #ff4455; border-radius:18px; padding:12px 14px 14px;
+    box-shadow:0 0 18px rgba(255,40,80,.35), inset 0 0 20px rgba(255,40,60,.06);
+    min-width:180px;
+}
+#panelHacker .bubble::after{
+    content:""; position:absolute; left:-12px; bottom:22px;
+    border:10px solid transparent; border-right-color:#ff4455;
+}
+#panelHacker .bubble::before{
+    content:""; position:absolute; left:-8px; bottom:24px;
+    border:8px solid transparent; border-right-color:rgba(18,0,6,.94);
+    z-index:1;
+}
+#panelHacker .bubble .name{
+    display:block; color:#ff5577; font-size:12px; margin-bottom:6px;
+    letter-spacing:1.5px; text-shadow:0 0 8px #ff2255;
+}
+#panelHacker .bubble p{
+    color:#eaffea; font-size:14px; line-height:1.4; margin:0;
+    text-shadow:0 0 4px rgba(0,0,0,.8);
+}
+#panelHacker.hiding{
+    animation:bubbleOut .4s ease-in forwards;
+}
+@keyframes bubbleOut{
+    to{ opacity:0; transform:translateY(16px) scale(.95); }
+}
+
+#mobileControls{
+    display:none; position:fixed; left:0; right:0; bottom:0; width:100%; z-index:50;
+    justify-content:space-between; align-items:flex-end;
+    padding: 0 max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-right));
+    pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,.75) 40%, transparent);
+}
+#mobileControls.active { display:flex !important; }
+#dpad {
+    display:grid; grid-template-columns: 72px 72px 72px; grid-template-rows: 72px 72px 72px;
+    gap: 10px; pointer-events:auto;
+}
+.dpad-btn {
+    background:rgba(0, 255, 255, 0.18); border:2px solid cyan; border-radius:16px;
+    color:white; font-size:28px; font-weight:bold;
+    display:flex; justify-content:center; align-items:center; cursor:pointer;
+    user-select:none; touch-action:none; -webkit-user-select:none;
+    box-shadow:0 0 12px rgba(0,255,255,.2);
+}
+.dpad-btn.pressed, .dpad-btn:active { background:rgba(0, 255, 255, 0.55); transform:scale(0.96); }
+#btnUp { grid-column: 2; grid-row: 1; }
+#btnLeft { grid-column: 1; grid-row: 2; }
+#btnRight { grid-column: 3; grid-row: 2; }
+#btnDown { grid-column: 2; grid-row: 3; }
+
+#actionCluster{
+    display:flex; flex-direction:column; gap:10px; align-items:center;
+    align-self:flex-end; pointer-events:auto; margin-bottom: 20px; margin-right: 4px;
+}
+#actionBtn, #btnAtacar {
+    width: 84px; height: 84px; border-radius:50%;
+    display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px;
+    cursor:pointer; user-select:none; touch-action:none; -webkit-user-select:none;
+    font-size:28px; font-weight:bold;
+}
+#actionBtn {
+    background:rgba(255, 221, 102, 0.2);
+    border:3px solid #ffdd66; color:#ffdd66;
+    box-shadow:0 0 16px rgba(255,221,102,.3);
+}
+#btnAtacar {
+    display:none; background:rgba(255, 80, 120, 0.22);
+    border:3px solid #ff5577; color:#ff8899;
+    box-shadow:0 0 16px rgba(255,60,100,.35);
+}
+#btnAtacar.show { display:flex; }
+#actionBtn span, #btnAtacar span{ font-size:10px; letter-spacing:1px; }
+#actionBtn.pressed, #actionBtn:active { background:rgba(255, 221, 102, 0.55); transform:scale(0.96); }
+#btnAtacar.pressed, #btnAtacar:active { background:rgba(255, 80, 120, 0.55); transform:scale(0.96); }
+
+/* PC / laptop: nunca mostrar D-pad ni habilidad (usar teclado) */
+@media (hover: hover) and (pointer: fine){
+    #mobileControls, #mobileControls.active{
+        display:none !important; visibility:hidden !important; pointer-events:none !important;
+    }
+}
+/* Solo teléfono / tablet táctil real */
+@media (hover: none), (pointer: coarse){
+    @media (max-width:1200px){
+        #mobileControls.active{ display:flex !important; visibility:visible !important; }
+    }
+}
+
+/* Escritorio: scroll en personajes; juego con márgenes normales */
+@media (hover: hover) and (pointer: fine) and (min-width:901px){
+    #selectPersonaje{
+        overflow-y:scroll !important; overflow-x:hidden !important;
+        height:100vh !important; height:100dvh !important;
+        padding:24px 20px 48px !important;
+        flex-direction:column;
+    }
+    #gridChars{
+        overflow:visible !important; flex:none !important;
+        max-height:none !important; min-height:0;
+    }
+    #accionesSelect{
+        position:static !important; left:auto !important; right:auto !important; bottom:auto !important;
+        display:flex !important; justify-content:center; gap:16px; flex-wrap:wrap;
+        padding:16px 0 32px !important; margin:0 !important;
+        background:none !important; border:none !important; box-shadow:none !important;
+    }
+    #accionesSelect button{
+        flex:none !important; width:auto !important; max-width:none !important;
+        padding:14px 36px !important; font-size:20px !important;
+    }
+    #detalleChar{ background:transparent !important; padding:0 !important; margin:10px auto 18px !important; }
+
+    #hud{
+        position:absolute !important; top:10px !important;
+        padding:0 !important; background:none !important;
+        font-size:20px !important; z-index:5 !important;
+    }
+    #nombreNivel{ position:absolute !important; top:42px !important; z-index:5 !important; }
+    #bossHUD{ position:absolute !important; top:48px !important; z-index:9 !important; }
+    #habHUD{
+        position:absolute !important; top:38px !important; bottom:auto !important;
+        right:16px !important; left:auto !important; transform:none !important;
+        z-index:6 !important;
+    }
+    #avisoCodigo{
+        position:absolute !important; top:64px !important; bottom:auto !important;
+        z-index:6 !important;
+    }
+    body.modo-pelea #avisoCodigo{ top:118px !important; bottom:auto !important; }
+    body.modo-juego canvas,
+    canvas{
+        position:relative !important; top:auto !important; left:auto !important;
+        width:auto !important; height:auto !important;
+        max-width:95vw !important; max-height:calc(100vh - 90px) !important;
+        margin:70px auto 0 !important;
+        border:3px solid cyan !important;
+        box-shadow:0 0 20px cyan,0 0 50px cyan !important;
+        aspect-ratio:10/6 !important; z-index:1 !important;
+    }
+    body.modo-pelea canvas{ margin-top:118px !important; max-height:calc(100vh - 130px) !important; }
+}
+
+/* —— Móvil / tablet —— */
+@media (max-width:900px), (pointer: coarse), (hover: none){
+    #login,#menu{
+        height:100dvh; min-height:100dvh;
+        padding: max(48px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+        justify-content:center; align-items:center;
+        overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #login h1,#menu h1{
+        font-size:clamp(28px, 9vw, 44px);
+        text-align:center; line-height:1.1; padding:0 8px; margin:0 0 8px;
+    }
+    #login > p{
+        margin:0 8px 14px; font-size:clamp(13px, 3.5vw, 16px);
+        line-height:1.4; max-width:92vw;
+    }
+    #loginBox{
+        width:min(400px, 94vw); padding:16px 14px; margin:0 auto;
+        flex-shrink:0;
+    }
+    #tabsLogin{ gap:6px !important; margin-bottom:12px !important; }
+    #tabsLogin button{
+        flex:1; width:auto !important; padding:12px 10px !important; font-size:14px !important;
+    }
+    #loginBox button{
+        width:100% !important; padding:14px 16px !important; font-size:18px !important;
+        margin-top:4px;
+    }
+    #nombreJugador, #passJugador, #loginUsuario, #loginPass{
+        font-size:16px; padding:12px;
+    }
+    #menu p{
+        margin:10px 8px 14px; font-size:clamp(13px, 3.5vw, 16px);
+        line-height:1.4; max-width:92vw;
+    }
+    #menu button, #introVirus button, #btnIntroEntrar,
+    #gameOver button, #victoria button, #nivelCompleto button, #panelCodigo button{
+        width:min(92vw, 360px); padding:16px 20px; font-size:clamp(16px, 4.5vw, 22px);
+    }
+
+    /* Selección móvil: scroll + barra fija abajo (display lo pone JS) */
+    #selectPersonaje{
+        height:100dvh; width:100%;
+        padding: max(12px, env(safe-area-inset-top)) 10px 0;
+        overflow:hidden; flex-direction:column;
+    }
+    #selectPersonaje h1{ font-size:clamp(20px, 5.5vw, 28px); margin-bottom:4px; flex-shrink:0; }
+    #selectPersonaje .sub{ font-size:12px; margin-bottom:8px; padding:0 6px; flex-shrink:0; }
+    #gridChars{
+        grid-template-columns:repeat(2, 1fr); gap:8px;
+        flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
+        margin:0; max-width:none; align-content:start;
+        padding-bottom:8px; min-height:0;
+    }
+    .charCard{ padding:6px; border-radius:10px; }
+    .charCard img{ height:120px; padding:4px; }
+    .charCard h3{ font-size:14px; margin:4px 0 2px; }
+    .charCard .rol{ font-size:10px; }
+    .charCard .hab{ font-size:10px; min-height:32px; }
+    #detalleChar{
+        flex-shrink:0; font-size:12px; margin:0; min-height:28px;
+        padding:6px 10px 4px; background:rgba(0,0,0,.7);
+    }
+    #accionesSelect{
+        position:fixed; left:0; right:0; bottom:0; z-index:45;
+        display:flex; flex-direction:row; flex-wrap:nowrap;
+        gap:8px; margin:0;
+        padding:10px 12px max(12px, env(safe-area-inset-bottom));
+        background:linear-gradient(to top, #000 75%, rgba(0,0,0,.92) 100%);
+        border-top:1px solid rgba(0,255,255,.35);
+        box-shadow:0 -8px 24px rgba(0,0,0,.65);
+    }
+    #accionesSelect button{
+        flex:1 1 0; width:auto !important; max-width:none !important;
+        padding:12px 8px !important; font-size:14px !important;
+        margin:0 !important;
+    }
+    #selectPersonaje{ padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+
+    #hud{
+        position:fixed; top:0; left:0; right:0;
+        flex-wrap:wrap; font-size:13px; gap:6px 10px;
+        padding: max(10px, env(safe-area-inset-top)) 48px 10px 8px;
+        line-height:1.4; z-index:30;
+        background:linear-gradient(to bottom, rgba(0,0,0,.9) 0%, rgba(0,0,0,.7) 80%, transparent 100%);
+        pointer-events:none;
+    }
+    #hud > div{ gap:4px; }
+    #nombreNivel{ display:none !important; }
+    body.modo-juego #nombreNivel{ display:none !important; }
+
+    /* Canvas centrado SIN estirar (mantiene 10:6) */
+    body.modo-juego{ background:#000; overflow:hidden; }
+    body.modo-juego canvas{
+        position:fixed !important;
+        left:50% !important; top:50% !important;
+        transform:translate(-50%, -50%) !important;
+        width:min(100vw, calc(100dvh * 10 / 6)) !important;
+        height:min(100dvh, calc(100vw * 6 / 10)) !important;
+        max-width:100vw !important; max-height:100dvh !important;
+        margin:0 !important; border:2px solid cyan !important;
+        box-shadow:0 0 16px rgba(0,255,255,.35) !important;
+        border-radius:0 !important;
+        aspect-ratio:10/6 !important; z-index:1;
+        object-fit:contain;
+    }
+    body.modo-juego.modo-pelea canvas{
+        margin:0 !important;
+    }
+
+    #bossHUD{
+        top: max(40px, calc(env(safe-area-inset-top) + 36px));
+        width:min(420px, 92vw); padding:6px 10px 8px; z-index:12;
+    }
+    #bossHUD .bossName{ font-size:12px; }
+    #bossHUD .bossHint{ font-size:11px; }
+
+    #habHUD{
+        position:fixed; left:50%; right:auto; bottom:auto;
+        top: max(40px, calc(env(safe-area-inset-top) + 34px));
+        transform:translateX(-50%);
+        font-size:11px; padding:4px 10px; max-width:90vw;
+        text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        z-index:19; pointer-events:none;
+        background:rgba(0,0,0,.65);
+    }
+    #avisoCodigo{
+        position:fixed; top: max(66px, calc(env(safe-area-inset-top) + 58px));
+        bottom:auto; font-size:12px; padding:0 10px; z-index:12;
+    }
+
+    /* Intro a pantalla completa */
+    #introVirus{
+        height:100dvh; width:100%; padding:0; gap:0; overflow:hidden;
+        align-items:stretch; justify-content:flex-end;
+    }
+    #introVirus .virusCard{
+        flex:1 1 auto; width:100%; max-width:none; max-height:none;
+        border-radius:0; border-left:none; border-right:none; border-top:none;
+        padding: max(16px, env(safe-area-inset-top)) 16px 12px;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    #introVirus img{ width:min(160px, 42vw); height:min(160px, 42vw); margin:8px auto 12px; }
+    #introVirus h1{ font-size:clamp(22px, 6.5vw, 32px); }
+    #introVirus h2{ font-size:15px; }
+    #introVirus p{ font-size:14px; }
+    #introVirus .tip{ font-size:13px; margin-bottom:0; width:100%; max-width:520px; }
+    #introVirus button, #btnIntroEntrar{
+        flex:0 0 auto; width:100% !important; max-width:none !important;
+        border-radius:0; margin:0;
+        padding:14px 16px !important; font-size:clamp(14px, 3.8vw, 17px) !important;
+        box-shadow:0 0 18px rgba(0,255,255,.45);
+        padding-bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    }
+
+    #gameOver, #victoria, #nivelCompleto, #panelCodigo{
+        height:100dvh; padding:20px 16px; text-align:center;
+    }
+    #gameOver h1, #victoria h1{ font-size:clamp(28px, 9vw, 48px); line-height:1.15; margin-bottom:18px; }
+    #nivelCompleto h1{ font-size:clamp(24px, 7vw, 40px); }
+    #nivelCompleto p{ font-size:16px; padding:0 8px; }
+    #panelCodigo h2{ font-size:clamp(22px, 6vw, 32px); }
+    #panelCodigo p{ font-size:14px; padding:0 8px; }
+    #panelCodigo .codigoReveal{ font-size:32px; letter-spacing:8px; }
+    #codigoInput{
+        font-size:22px; width:min(280px, 80vw); padding:14px 16px;
+    }
+
+    #mobileControls{
+        z-index:30;
+        padding: 0 max(10px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+        background:transparent;
+    }
+    #dpad{
+        grid-template-columns: 78px 78px 78px;
+        grid-template-rows: 78px 78px 78px;
+        gap: 10px;
+        opacity:0.92;
+    }
+    .dpad-btn{
+        font-size:30px; border-radius:18px;
+        background:rgba(0,255,255,.28); border-width:3px;
+    }
+    #actionCluster{ margin-bottom: 10px; gap:12px; opacity:0.95; }
+    #actionBtn, #btnAtacar{ width:92px; height:92px; font-size:32px; border-width:3px; }
+    #actionBtn span, #btnAtacar span{ font-size:11px; }
+    #btnAtacar.show{ display:flex !important; }
+
+    /* Burbuja arriba a la izquierda, no encima del D-pad */
+    #panelHacker{
+        left:max(8px, env(safe-area-inset-left));
+        top: max(48px, calc(env(safe-area-inset-top) + 44px));
+        bottom:auto; right:auto;
+        max-width:min(260px, 62vw);
+        gap:6px; z-index:14; align-items:flex-start;
+    }
+    #panelHacker .hackerAvatar{ width:48px; height:48px; }
+    #panelHacker .bubble{ padding:8px 9px; border-radius:12px; }
+    #panelHacker .bubble p{ font-size:11px; }
+    #panelHacker .bubble .name{ font-size:10px; }
+}
+
+@media (max-width:900px) and (orientation:landscape), (pointer:coarse) and (orientation:landscape){
+    #login, #menu{
+        padding: max(8px, env(safe-area-inset-top)) 12px max(8px, env(safe-area-inset-bottom));
+        flex-direction:row; flex-wrap:wrap; align-content:center;
+        justify-content:center; gap:8px;
+    }
+    #login h1, #menu h1{ font-size:clamp(20px, 5vh, 32px); width:100%; margin:0; }
+    #login > p{ display:none; }
+    #loginBox{ width:min(420px, 70vw); max-height:78dvh; overflow-y:auto; }
+
+    #selectPersonaje{
+        padding: max(6px, env(safe-area-inset-top)) 8px 0;
+        padding-bottom: calc(58px + env(safe-area-inset-bottom));
+    }
+    #selectPersonaje h1{ font-size:18px; margin-bottom:2px; }
+    #selectPersonaje .sub{ display:none; }
+    #gridChars{
+        grid-template-columns:repeat(4, 1fr); gap:6px;
+    }
+    .charCard img{ height:72px; }
+    .charCard .hab{ min-height:0; font-size:9px; }
+    #detalleChar{ display:none; }
+    #accionesSelect{
+        flex-direction:row; padding:8px 10px max(8px, env(safe-area-inset-bottom));
+    }
+    #accionesSelect button{ padding:10px 8px !important; font-size:13px !important; }
+
+    #introVirus{ padding:0; }
+    #introVirus .virusCard{
+        display:grid;
+        grid-template-columns: min(18vw, 96px) 1fr;
+        grid-template-areas:
+            "img nivel"
+            "img nombre"
+            "img info"
+            "img tip";
+        column-gap:12px; row-gap:2px;
+        align-items:center; text-align:left; justify-content:center;
+        padding: max(8px, env(safe-area-inset-top)) 14px 8px;
+    }
+    #introVirus img{
+        grid-area:img;
+        width:min(18vw, 96px); height:min(18vw, 96px);
+        margin:0;
+    }
+    #introVirus h2{ grid-area:nivel; margin:0; text-align:left; font-size:12px; }
+    #introVirus h1{ grid-area:nombre; margin:0; text-align:left; font-size:clamp(16px, 4.5vh, 24px); }
+    #introVirus p:not(.tip){ grid-area:info; margin:0; text-align:left; font-size:12px; max-width:none; }
+    #introVirus .tip{ grid-area:tip; margin:0; text-align:left; font-size:11px; padding:6px 8px; max-width:none; }
+    #introVirus button, #btnIntroEntrar{
+        width:100% !important; max-width:none !important;
+        padding:10px 12px !important; font-size:14px !important;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    }
+
+    body.modo-juego canvas{
+        width:min(100vw, calc(100dvh * 10 / 6)) !important;
+        height:min(100dvh, calc(100vw * 6 / 10)) !important;
+        left:50% !important; top:50% !important;
+        transform:translate(-50%, -50%) !important;
+        margin:0 !important;
+        border-width:1px !important;
+    }
+
+    #panelHacker{
+        top: max(34px, calc(env(safe-area-inset-top) + 28px));
+        bottom:auto;
+        max-width:min(180px, 32vw);
+        opacity:0.9;
+    }
+    #panelHacker .hackerAvatar{ width:36px; height:36px; }
+    #panelHacker .bubble p{ font-size:9px; }
+
+    #mobileControls{
+        background:transparent;
+        padding: 0 max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right));
+    }
+    #dpad{
+        grid-template-columns: 62px 62px 62px;
+        grid-template-rows: 62px 62px 62px;
+        gap: 7px;
+        opacity:0.9;
+    }
+    .dpad-btn{ font-size:24px; border-radius:14px; background:rgba(0,0,0,.45); border-width:2px; }
+    #actionBtn, #btnAtacar{ width:74px; height:74px; font-size:26px; }
+    #actionBtn span, #btnAtacar span{ display:none; }
+    #habHUD{
+        top: max(30px, calc(env(safe-area-inset-top) + 26px));
+        bottom:auto; left:50%; right:auto;
+        transform:translateX(-50%);
+        font-size:10px; max-width:70vw; padding:3px 8px;
+    }
+    #avisoCodigo{
+        top: max(52px, calc(env(safe-area-inset-top) + 46px));
+        bottom:auto; font-size:11px;
+    }
+    #hud{
+        font-size:11px; gap:5px 8px;
+        padding: max(4px, env(safe-area-inset-top)) 44px 4px 6px;
+    }
+}
+
+@media (max-width:380px){
+    .charCard img{ height:120px; }
+    #dpad{
+        grid-template-columns: 70px 70px 70px;
+        grid-template-rows: 70px 70px 70px;
+    }
+    #actionBtn, #btnAtacar{ width:84px; height:84px; }
+}
+
+/* Tableta / iPad: botones aún más grandes */
+@media (min-width:700px) and (max-width:1200px) and ((pointer:coarse), (hover:none)){
+    #dpad{
+        grid-template-columns: 90px 90px 90px;
+        grid-template-rows: 90px 90px 90px;
+        gap: 12px;
+    }
+    .dpad-btn{ font-size:34px; border-radius:20px; }
+    #actionBtn, #btnAtacar{ width:108px; height:108px; font-size:36px; }
+    #actionBtn span, #btnAtacar span{ font-size:12px; display:block; }
+}
+
+/* —— Pantalla de carga —— */
+#pantallaCarga{
+    position:fixed; inset:0; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(0,80,100,.55), transparent 55%),
+        #000;
+    padding:24px;
+    transition:opacity .45s ease;
+}
+#pantallaCarga.oculta{ opacity:0; pointer-events:none; }
+#pantallaCarga h1{
+    color:#00ffff; font-size:clamp(22px, 6vw, 40px);
+    text-shadow:0 0 16px cyan; margin-bottom:8px; text-align:center;
+}
+#pantallaCarga .subCarga{
+    color:#88aacc; font-size:14px; margin-bottom:18px; text-align:center;
+}
+#cargaCarrusel{
+    width:min(280px, 70vw); height:min(280px, 70vw);
+    display:flex; align-items:center; justify-content:center;
+    border:2px solid #00ffff55; border-radius:16px;
+    background:rgba(0,20,30,.7); box-shadow:0 0 24px rgba(0,255,255,.25);
+    margin-bottom:16px; overflow:hidden;
+}
+#cargaCarrusel img{
+    max-width:88%; max-height:88%; object-fit:contain;
+    image-rendering:auto; transition:opacity .25s;
+}
+#cargaEtiqueta{
+    color:#ffdd66; font-size:15px; min-height:22px; margin-bottom:14px; text-align:center;
+}
+#cargaBarraWrap{
+    width:min(320px, 80vw); height:12px; background:#112233;
+    border:1px solid #226677; border-radius:8px; overflow:hidden;
+}
+#cargaBarra{
+    height:100%; width:0%; background:linear-gradient(90deg,#00ffff,#66ffaa);
+    box-shadow:0 0 12px cyan; transition:width .15s linear;
+}
+#cargaPct{ color:#88ffff; font-size:13px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div id="pantallaCarga">
+    <h1>ESCAPE DEL HACKER</h1>
+    <p class="subCarga">Cargando sistema infiltrado…</p>
+    <div id="cargaCarrusel"><img id="cargaImg" src="assets/hacker/hacker.png" alt="carga"></div>
+    <div id="cargaEtiqueta">EL HACKER</div>
+    <div id="cargaBarraWrap"><div id="cargaBarra"></div></div>
+    <div id="cargaPct">0%</div>
+</div>
+
+<button id="btnMusica" onclick="toggleMusica()" title="Música">🔊</button>
+
+<div id="login">
+    <h1>ESCAPE DEL HACKER</h1>
+    <p>Crea tu cuenta con usuario y contraseña para jugar en cualquier dispositivo</p>
+    <div id="loginBox">
+        <div id="tabsLogin" style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;">
+            <button type="button" id="tabRegistro" onclick="mostrarTabLogin('registro')" style="padding:10px 18px;font-size:14px;">REGISTRO</button>
+            <button type="button" id="tabEntrar" onclick="mostrarTabLogin('entrar')" style="padding:10px 18px;font-size:14px;background:#446677;">ENTRAR</button>
+        </div>
+        <div id="panelLoginNuevo">
+            <label for="nombreJugador">USUARIO</label>
+            <input id="nombreJugador" maxlength="16" autocomplete="username" placeholder="Ej: neobyte">
+            <label for="passJugador">CONTRASEÑA</label>
+            <input id="passJugador" type="password" maxlength="32" autocomplete="new-password" placeholder="Mínimo 4 caracteres">
+            <div id="loginError"></div>
+            <button onclick="registrarJugador()">CREAR CUENTA</button>
+            <p id="loginExtra">Se guarda en el servidor · puedes entrar desde otro dispositivo</p>
+        </div>
+        <div id="panelLoginExistente" style="display:none">
+            <label for="loginUsuario">USUARIO</label>
+            <input id="loginUsuario" maxlength="16" autocomplete="username" placeholder="Tu usuario">
+            <label for="loginPass">CONTRASEÑA</label>
+            <input id="loginPass" type="password" maxlength="32" autocomplete="current-password" placeholder="Tu contraseña">
+            <div id="loginError2" style="color:#ff6677;min-height:22px;font-size:14px;margin-bottom:8px;"></div>
+            <button onclick="loginJugador()">ENTRAR</button>
+            <p id="recordLogin" style="color:#ffdd66;margin-top:14px;"></p>
+        </div>
+        <div id="panelSesionActiva" style="display:none">
+            <p class="saludo" style="margin:0 0 8px">Sesión activa en este navegador</p>
+            <h2 id="nombreGuardado" style="color:#00ffff;margin:0 0 10px;font-size:28px;text-shadow:0 0 12px cyan;"></h2>
+            <p id="recordSesion" style="color:#ffdd66;margin:0 0 10px;"></p>
+            <p id="avisoOtraCuenta" style="color:#ffaa88;font-size:13px;margin:0 0 14px;line-height:1.35;">
+                ¿No eres tú? Pulsa <b>CERRAR SESIÓN</b> y luego REGISTRO o ENTRAR con tu cuenta.
+            </p>
+            <button onclick="entrarConPerfil()">CONTINUAR</button>
+            <button onclick="cerrarSesionEscape()" style="background:#446677;margin-top:10px;">CERRAR SESIÓN / CAMBIAR CUENTA</button>
+        </div>
+    </div>
+</div>
+
+<div id="menu">
+    <h1>ESCAPE DEL HACKER</h1>
+    <p class="saludo" id="saludoMenu">Hacker: —</p>
+    <p class="recordTxt" id="recordMenu">Récord: 0</p>
+    <p>
+        Te acaban de teletransportar a un sistema hackeado.
+        Escapa antes de que el hacker te encuentre.
+        10 niveles · 1 minuto · 3 vidas por nivel
+    </p>
+    <button onclick="mostrarSeleccion()">ENTRAR AL SISTEMA</button>
+    <button onclick="irACambiarJugador()" style="background:#446677;margin-top:12px;font-size:16px;padding:12px 28px;">CAMBIAR JUGADOR</button>
+</div>
+
+<div id="selectPersonaje">
+    <h1>ELIGE TU PERSONAJE</h1>
+    <p class="sub">Cada uno tiene una habilidad pequeña que te ayuda un poco</p>
+    <div id="gridChars"></div>
+    <div id="detalleChar">Selecciona un personaje para continuar</div>
+    <div id="accionesSelect">
+        <button onclick="volverMenu()" style="background:#446677">VOLVER</button>
+        <button id="btnJugar" onclick="iniciar()" disabled>COMENZAR MISIÓN</button>
+    </div>
+</div>
+
+<div id="hud">
+    <div>🧑 <span id="hudJugador">—</span></div>
+    <div>❤️ <span id="vidas">3</span></div>
+    <div>⭐ <span id="puntos">0</span></div>
+    <div>🔑 <span id="llaves">0</span></div>
+    <div>⏳ <span id="tiempo">60</span></div>
+    <div>⚡ Nivel <span id="nivel">1</span></div>
+    <div id="hudPerso">👤 <span id="nombrePerso">—</span></div>
+</div>
+<div id="nombreNivel"></div>
+<div id="avisoCodigo"></div>
+<div id="habHUD"></div>
+<div id="bossHUD">
+    <div class="bossName" id="bossName">JEFE</div>
+    <div class="bossBarWrap"><div class="bossBar" id="bossBar"></div></div>
+    <div class="bossHint" id="bossHint">ESPACIO / ⚔ = Atacar al jefe</div>
+</div>
+
+<div id="introVirus">
+    <div class="virusCard">
+        <h2 id="introNivelTitulo">NIVEL 1</h2>
+        <h1 id="introVirusNombre">VIRUS</h1>
+        <img id="introVirusImg" src="assets/malware_intro/virus.png" alt="malware">
+        <p id="introVirusInfo">Se adjunta a archivos limpios y se propaga cuando se ejecutan.</p>
+        <p class="tip" id="introVirusTip">Consejo: recoge las llaves y llega a la puerta verde.</p>
+    </div>
+    <button type="button" id="btnIntroEntrar" onclick="empezarNivelTrasIntro()">ENTENDER · ENTRAR AL NIVEL</button>
+</div>
+
+<canvas id="canvas" width="1000" height="600"></canvas>
+
+<div id="panelHacker">
+    <img class="hackerAvatar" src="assets/hacker/hacker.png" alt="El Hacker">
+    <div class="bubble">
+        <span class="name">☠ EL HACKER</span>
+        <p id="hackerTexto">...</p>
+    </div>
+</div>
+
+<div id="mobileControls">
+    <div id="dpad">
+        <div class="dpad-btn" id="btnUp" data-key="ArrowUp">⬆️</div>
+        <div class="dpad-btn" id="btnLeft" data-key="ArrowLeft">⬅️</div>
+        <div class="dpad-btn" id="btnRight" data-key="ArrowRight">➡️</div>
+        <div class="dpad-btn" id="btnDown" data-key="ArrowDown">⬇️</div>
+    </div>
+    <div id="actionCluster">
+        <div id="btnAtacar" data-key=" ">⚔<span>ATACAR</span></div>
+        <div id="actionBtn" data-key="e">⚡<span>HABILIDAD</span></div>
+    </div>
+</div>
+
+<div id="gameOver">
+    <h1>SISTEMA BLOQUEADO</h1>
+    <button onclick="location.reload()">REINICIAR</button>
+</div>
+
+<div id="victoria">
+    <h1>HACK COMPLETADO</h1>
+    <p>Has escapado del sistema.</p>
+    <button onclick="location.reload()">JUGAR OTRA VEZ</button>
+</div>
+
+<div id="nivelCompleto">
+    <h1 id="tituloNivel">NIVEL COMPLETADO</h1>
+    <p id="textoNivel">Preparando siguiente nivel...</p>
+    <button onclick="siguienteNivel()">CONTINUAR</button>
+</div>
+
+<div id="panelCodigo">
+    <h2>CÓDIGO FANTASMA</h2>
+    <p>Has recuperado todas las llaves. El código fantasma aparece en pantalla.</p>
+    <div class="codigoReveal" id="codigoMostrado">----</div>
+    <p>Escríbelo para abrir la puerta:</p>
+    <input id="codigoInput" maxlength="4" autocomplete="off" placeholder="____">
+    <button onclick="verificarCodigo()">DESBLOQUEAR</button>
+    <p id="codigoError" style="color:#ff5555;margin-top:12px;min-height:24px;"></p>
+</div>
+
+<script>
+// ===============================
+// ESCAPE DEL HACKER 2.0 — LÓGICA
+// ===============================
+// Flujo: Login → Menú → Elegir personaje → Intro malware → Jugar nivel →
+//        (llaves + puerta / jefe) → siguiente nivel o victoria.
+// El dibujo se hace en <canvas>; la UI flotante es HTML/CSS.
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false; // pixel-art nítido (sin suavizado)
+
+// ----- Estado global de la partida -----
+let jugando = false;
+let vidas = 3;
+let puntos = 0;
+let llaves = 0;
+let tiempo = 60;
+let nivelActual = 1;
+let llavesNecesarias = 3;
+let tiempoTimer = null;
+let invencible = 0;       // frames de inmunidad tras daño
+let animFrame = 0;        // contador para animaciones
+let temaActual = null;    // colores/decoración del nivel actual
+
+// Personaje seleccionado + variables de su habilidad activa/pasiva
+let personaje = null;
+let escudoActivo = false;      // FIREWALL / ENGINEER
+let patchUsos = 0;             // PATCH (usos restantes por nivel)
+let sombraUsada = false;       // SHADOW / GHOST
+let sombraTimer = 0;
+let nexusUsado = false;        // NEXUS
+let ralentizarTimer = 0;
+let zeroUsado = false;
+let zeroSpeedTimer = 0;
+let velBaseJugador = 5.5;
+const DUR_SIGILO = 240;        // ~4s
+const DUR_CONGELAR = 300;      // ~5s
+const DUR_INV_ESCUDO = 150;    // tras bloquear con FIREWALL
+const DUR_INV_DANO = 130;      // tras recibir daño
+const DUR_INV_GUARD = 160;     // GUARD aguanta más
+const DUR_INV_INICIO = 90;     // al empezar nivel
+const DUR_ZERO_SPEED = 210;    // ~3.5s
+const PATCH_USOS_NIVEL = 2;
+
+// Catálogo jugable: cada uno tiene color, sprite, arma y habilidad.
+// Para agregar un personaje nuevo: un objeto aquí + su PNG en assets/chars/
+const personajes = [
+    {
+        id:"byte", nombre:"BYTE+", rol:"El hacker ético Supremo",
+        color:"#33ff66", img:"assets/chars/byte.png",
+        sheet:"assets/chars/byte.png",
+        hab:"Códigos + arma: Teclado hacker (proyectiles rápidos).",
+        detalle:"Experto en seguridad. Recoge datos más valiosos.",
+        arma:{ nombre:"Teclado hacker", tipo:"proyectil", cooldown:11, daño:1, speed:10, life:30, w:16, h:10, icon:"⌨" }
+    },
+    {
+        id:"firewall", nombre:"FIREWALL X", rol:"La guardiana Impenetrable",
+        color:"#9966ff", img:"assets/chars/firewall.png",
+        sheet:"assets/chars/firewall.png",
+        hab:"Escudo + arma: Golpe de barrera (melee fuerte).",
+        detalle:"Protege sistemas y bloquea amenazas.",
+        arma:{ nombre:"Golpe de barrera", tipo:"melee", cooldown:20, daño:2, reach:55, w:72, h:72, icon:"🛡" }
+    },
+    {
+        id:"scan", nombre:"SCAN PRO", rol:"El analista Avanzado",
+        color:"#4488ff", img:"assets/chars/scan.png",
+        sheet:"assets/chars/scan.png",
+        hab:"Radar + arma: Rayo escáner (largo alcance).",
+        detalle:"Detecta y elimina amenazas ocultas.",
+        arma:{ nombre:"Rayo escáner", tipo:"haz", cooldown:16, daño:1, reach:170, w:14, h:10, icon:"📡" }
+    },
+    {
+        id:"patch", nombre:"PATCH+", rol:"La reparadora Élite",
+        color:"#66ff99", img:"assets/chars/patch.png",
+        sheet:"assets/chars/patch.png",
+        hab:"Parche + arma: Inyector (bala que a veces cura).",
+        detalle:"Restaura sistemas y aplica parches.",
+        arma:{ nombre:"Inyector patch", tipo:"proyectil", cooldown:15, daño:1, speed:8, life:24, w:14, h:14, healOnHit:true, icon:"💉" }
+    },
+    {
+        id:"shadow", nombre:"SHADOW X", rol:"El infiltrado Supremo",
+        color:"#ff3344", img:"assets/chars/shadow.png",
+        sheet:"assets/chars/shadow.png",
+        hab:"Sigilo + arma: Cuchillas sombra (ataques rápidos).",
+        detalle:"Se oculta y neutraliza malwares sigilosos.",
+        arma:{ nombre:"Cuchillas sombra", tipo:"melee", cooldown:9, daño:1, reach:50, w:58, h:58, hits:2, icon:"🗡" }
+    },
+    {
+        id:"guard", nombre:"GUARD TITAN", rol:"El defensor Inquebrantable",
+        color:"#ff8800", img:"assets/chars/guard.png",
+        sheet:"assets/chars/guard.png",
+        hab:"Blindaje + arma: Martillo guardia (golpe pesado).",
+        detalle:"Aguanta ataques y protege al equipo.",
+        arma:{ nombre:"Martillo guardia", tipo:"melee", cooldown:26, daño:3, reach:64, w:84, h:84, icon:"🔨" }
+    },
+    {
+        id:"nexus", nombre:"NEXUS PRIME", rol:"La estratega Maestra",
+        color:"#44ddff", img:"assets/chars/nexus.png",
+        sheet:"assets/chars/nexus.png",
+        hab:"Congelar + arma: Orbe nexus (persigue al jefe).",
+        detalle:"Controla sistemas y da soporte al equipo.",
+        arma:{ nombre:"Orbe nexus", tipo:"proyectil", cooldown:14, daño:1, speed:6.5, life:45, w:18, h:18, seeking:true, icon:"◈" }
+    },
+    {
+        id:"zero", nombre:"ZERO BYTE", rol:"El guerrero digital",
+        color:"#4488ff", img:"assets/chars/zero.png",
+        sheet:"assets/chars/zero.png",
+        hab:"Velocidad cuántica (E) + Cuchillas de datos (ataque rápido).",
+        detalle:"Corta sistemas enemigos con cuchillas de datos.",
+        arma:{ nombre:"Cuchillas de datos", tipo:"melee", cooldown:8, daño:2, reach:52, w:60, h:60, hits:2, icon:"⚔" }
+    },
+    {
+        id:"engineer", nombre:"ENGINEER X", rol:"La ingeniera Suprema",
+        color:"#ff8800", img:"assets/chars/engineer.png",
+        sheet:"assets/chars/engineer.png",
+        hab:"Escudo mecánico (bloquea 1 golpe) + Dron proyectil.",
+        detalle:"Despliega tecnología de combate avanzada.",
+        arma:{ nombre:"Dron turreta", tipo:"proyectil", cooldown:13, daño:1, speed:9, life:32, w:16, h:16, icon:"⚙" }
+    },
+    {
+        id:"ghostp", nombre:"GHOST PROTOCOL", rol:"El fantasma cibernético",
+        color:"#44ffcc", img:"assets/chars/ghost.png",
+        sheet:"assets/chars/ghost.png",
+        hab:"Intangibilidad (E) + Drenaje de energía.",
+        detalle:"Atraviesa la red como un fantasma digital.",
+        arma:{ nombre:"Drenaje de energía", tipo:"proyectil", cooldown:12, daño:1, speed:7, life:40, w:16, h:16, seeking:true, healOnHit:true, icon:"✧" }
+    }
+];
+
+// Código Fantasma
+let codigoSecreto = "";
+let codigoDesbloqueado = false;
+let codigoIngresado = false;
+let panelCodigoAbierto = false;
+
+// Mecánicas especiales
+let lasers = [];
+let firewalls = [];
+let servidores = [];
+let nodosIA = [];
+let conexionesNN = [];
+let impulsosNN = [];
+let zonasInfeccion = [];
+let nucleo = null;
+
+const imgLlave = new Image();
+imgLlave.src = "assets/key.png";
+const imgPerso = new Image();
+const imgSheet = new Image();
+
+// Animación del personaje (sprite sheet 8 dirs)
+const DIRS = ["s","sw","w","nw","n","ne","e","se"];
+let anim = {
+    dir: 0,          // índice en DIRS
+    estado: "idle",  // idle | walk | hurt
+    frame: 0,
+    timer: 0,
+    hurtTimer: 0,
+    cw: 96,
+    ch: 128,
+    maxF: 4,
+    frames: { idle:2, walk:4, hurt:2 }
+};
+
+// Un malware distinto por nivel (sprites PNG transparentes)
+const malwares = {
+    virus:       { id:"virus",       nombre:"VIRUS",        archivo:"assets/malware/virus.png",
+        intro:"assets/malware_intro/virus.png",
+        info:"Se adjunta a archivos limpios y se propaga cuando se ejecutan.",
+        tip:"Mantén distancia de los virus rojos y recoge las llaves." },
+    gusano:      { id:"gusano",      nombre:"GUSANO (WORM)", archivo:"assets/malware/gusano.png",
+        intro:"assets/malware_intro/gusano.png",
+        info:"Se replica solo y se mueve por la red sin necesitar un archivo host.",
+        tip:"Hay más enemigos en movimiento. Usa los pasillos con cuidado." },
+    troyano:     { id:"troyano",     nombre:"TROYANO",      archivo:"assets/malware/troyano.png",
+        intro:"assets/malware_intro/troyano.png",
+        info:"Se disfraza de software legítimo para engañarte y abrir puertas traseras.",
+        tip:"Zona restringida: los láseres también quitan vida." },
+    ransomware:  { id:"ransomware",  nombre:"RANSOMWARE",   archivo:"assets/malware/ransomware.png",
+        intro:"assets/malware_intro/ransomware.png",
+        info:"Bloquea o cifra tus archivos y exige un rescate para liberarlos.",
+        tip:"El firewall se abre y cierra. Espera el hueco para pasar." },
+    spyware:     { id:"spyware",     nombre:"SPYWARE",      archivo:"assets/malware/spyware.png",
+        intro:"assets/malware_intro/spyware.png",
+        info:"Espía la red neuronal: observa pesos, activaciones y datos que la IA intenta imitar del cerebro.",
+        tip:"La IA copia redes neuronales. No te acerques al núcleo: las activaciones te empujan." },
+    adware:      { id:"adware",      nombre:"ADWARE",       archivo:"assets/malware/adware.png",
+        intro:"assets/malware_intro/adware.png",
+        info:"Llena el sistema de anuncios no deseados y rastrea tu navegación.",
+        tip:"Red Oscura: solo ves cerca de ti. Explora con calma." },
+    rootkit:     { id:"rootkit",     nombre:"ROOTKIT",      archivo:"assets/malware/rootkit.png",
+        intro:"assets/malware_intro/rootkit.png",
+        info:"Se oculta profundamente en el sistema para controlar y no ser detectado.",
+        tip:"Recoge todas las llaves para revelar el código fantasma." },
+    fileless:    { id:"fileless",    nombre:"FILELESS",     archivo:"assets/malware/fileless.png",
+        intro:"assets/malware_intro/fileless.png",
+        info:"No usa archivos: vive en la memoria para evadir la detección.",
+        tip:"PELEA DE JEFE: usa ESPACIO / ⚔ para atacar al Proceso Fantasma." },
+    botnet:      { id:"botnet",      nombre:"BOTNET",       archivo:"assets/malware/botnet.png",
+        intro:"assets/malware_intro/botnet.png",
+        info:"Convierte dispositivos en una red para ataques masivos (DDoS, spam...).",
+        tip:"PELEA: destruye el Núcleo. Invoca bots — atácalo sin parar." },
+    bomba:       { id:"bomba",       nombre:"BOMBA LÓGICA", archivo:"assets/malware/bomba.png",
+        intro:"assets/malware_intro/bomba.png",
+        info:"Se activa cuando se cumple una condición y causa daño o pérdida de datos.",
+        tip:"PELEA FINAL: ataca la bomba para bajar su carga de detonación." }
+};
+
+const imgsMalware = {};
+Object.keys(malwares).forEach(k => {
+    const im = new Image();
+    im.src = malwares[k].archivo;
+    imgsMalware[k] = im;
+});
+
+let malwareNivel = malwares.virus;
+
+// Configuración por nivel (escalable): llaves, enemigos, malware, tema visual, pelea de jefe.
+// Para agregar Nivel 11+: push de un nuevo objeto con los mismos campos.
+const niveles = [
+    {
+        numero:1, nombre:"Infiltración", llaves:3, enemigos:3, velocidad:3.4,
+        jefe:false, scary:false, tema:"infiltracion", malware:"virus",
+        tiempo:55,
+        desc:"Amenaza: VIRUS — se adjunta y se propaga."
+    },
+    {
+        numero:2, nombre:"Servidores protegidos", llaves:4, enemigos:4, velocidad:3.9,
+        jefe:false, scary:false, tema:"servidores", malware:"gusano",
+        tiempo:55,
+        desc:"Amenaza: GUSANO — se replica por la red."
+    },
+    {
+        numero:3, nombre:"Zona restringida", llaves:4, enemigos:6, velocidad:4.5,
+        jefe:false, scary:false, tema:"restringida", malware:"troyano",
+        tiempo:55,
+        desc:"Amenaza: TROYANO — abre puertas traseras."
+    },
+    {
+        numero:4, nombre:"Firewall activo", llaves:5, enemigos:6, velocidad:4.9,
+        jefe:false, scary:false, tema:"firewall", malware:"ransomware",
+        tiempo:50,
+        desc:"Amenaza: RANSOMWARE — cifra y bloquea."
+    },
+    {
+        numero:5, nombre:"Red Neuronal", llaves:5, enemigos:6, velocidad:5.3,
+        jefe:false, scary:false, tema:"nucleo", malware:"spyware",
+        tiempo:50,
+        desc:"La IA imita el cerebro: capas, neuronas y conexiones."
+    },
+    {
+        numero:6, nombre:"Red Oscura", llaves:6, enemigos:7, velocidad:5.8,
+        jefe:false, scary:false, tema:"oscura", malware:"adware",
+        tiempo:50,
+        desc:"Amenaza: ADWARE — pop-ups en la oscuridad."
+    },
+    {
+        numero:7, nombre:"Código Fantasma", llaves:6, enemigos:6, velocidad:6.0,
+        jefe:false, scary:false, tema:"fantasma", malware:"rootkit",
+        tiempo:50,
+        desc:"Amenaza: ROOTKIT — se oculta en el código."
+    },
+    {
+        numero:8, nombre:"Memoria Volátil", llaves:4, enemigos:4, velocidad:5.6,
+        jefe:true, scary:false, tema:"virus", malware:"fileless",
+        pelea:true, tiempo:85, jefeHp:12, jefeVel:2.2,
+        desc:"PELEA: derrota al Proceso Fantasma y recoge las llaves."
+    },
+    {
+        numero:9, nombre:"Núcleo Botnet", llaves:5, enemigos:3, velocidad:6.0,
+        jefe:true, scary:true, tema:"brote", malware:"botnet",
+        pelea:true, tiempo:90, jefeHp:16, jefeVel:2.5,
+        desc:"PELEA: destruye el Núcleo Botnet. ¡Ataca con ESPACIO!"
+    },
+    {
+        numero:10, nombre:"Detonación Final", llaves:5, enemigos:3, velocidad:6.3,
+        jefe:true, scary:true, tema:"supremo", malware:"bomba",
+        pelea:true, tiempo:95, jefeHp:20, jefeVel:2.7,
+        desc:"PELEA FINAL: detén la Bomba Lógica antes de que detone."
+    }
+];
+
+// Paleta visual por tema (fondo, muros, brillo, borde del canvas)
+const temas = {
+    infiltracion: { bg:"#001018", muro:"#005577", glow:"#00ffff", borde:"#00ffff" },
+    servidores:   { bg:"#001a28", muro:"#1a4a6a", glow:"#44aaff", borde:"#3399ff" },
+    restringida:  { bg:"#0c1018", muro:"#2a3548", glow:"#ff5533", borde:"#ff3344" },
+    firewall:     { bg:"#1a0500", muro:"#772200", glow:"#ff8800", borde:"#ff5500" },
+    nucleo:       { bg:"#0a0018", muro:"#442266", glow:"#aa66ff", borde:"#cc88ff" },
+    oscura:       { bg:"#050508", muro:"#222233", glow:"#6644aa", borde:"#5533aa" },
+    fantasma:     { bg:"#0a1020", muro:"#335566", glow:"#88ffcc", borde:"#66ffaa" },
+    virus:        { bg:"#180018", muro:"#552255", glow:"#ff44aa", borde:"#ff66cc" },
+    brote:        { bg:"#1a0000", muro:"#551111", glow:"#ff2222", borde:"#ff0000" },
+    supremo:      { bg:"#120000", muro:"#440000", glow:"#ff0000", borde:"#ff3333" }
+};
+
+let teclas = {};
+const jugador = { x:40, y:40, w:42, h:50, vel:5.5 };
+const puerta = { x:900, y:500, w:45, h:60 };
+let muros = [];
+let llavesMapa = [];
+let enemigos = [];
+let proyectiles = [];
+let efectosAtaque = [];
+let ataqueCooldown = 0;
+let facing = { x:1, y:0 };
+let jefeDerrotado = false;
+let modoPelea = false;
+let bossHUDTimer = 0;
+let jugadorDesvanecido = false;
+
+const layouts = {
+    // Pasillos anchos; dejar franja superior libre para el banner (y≈0–40)
+    infiltracion: [
+        {x:220,y:40,w:28,h:140},
+        {x:220,y:320,w:28,h:280},
+        {x:480,y:120,w:28,h:280},
+        {x:740,y:40,w:28,h:180},
+        {x:740,y:380,w:28,h:220}
+    ],
+    servidores: [
+        {x:200,y:40,w:30,h:130},{x:200,y:310,w:30,h:290},
+        {x:420,y:100,w:30,h:200},{x:420,y:380,w:30,h:220},
+        {x:640,y:40,w:30,h:190},{x:640,y:360,w:30,h:240},
+        {x:820,y:120,w:30,h:360}
+    ],
+    // Nivel 3: misma estética, pasillos ≥60px para el jugador (42×50)
+    restringida: [
+        // columnas verticales con huecos claros
+        {x:190,y:40,w:22,h:150},
+        {x:190,y:310,w:22,h:270},
+        {x:400,y:90,w:22,h:170},
+        {x:400,y:390,w:22,h:190},
+        {x:610,y:40,w:22,h:180},
+        {x:610,y:350,w:22,h:230},
+        {x:800,y:100,w:22,h:160},
+        {x:800,y:380,w:22,h:200},
+        // exclusas cortas (NO tapan todo el pasillo)
+        {x:212,y:210,w:70,h:16},
+        {x:330,y:330,w:70,h:16},
+        {x:422,y:280,w:70,h:16},
+        {x:540,y:200,w:70,h:16},
+        {x:632,y:300,w:70,h:16},
+        {x:730,y:340,w:70,h:16}
+    ],
+    firewall: [
+        {x:200,y:40,w:22,h:160},{x:200,y:330,w:22,h:250},
+        {x:420,y:90,w:22,h:180},{x:420,y:390,w:22,h:190},
+        {x:640,y:40,w:22,h:200},{x:640,y:360,w:22,h:220},
+        {x:820,y:120,w:22,h:160},{x:820,y:400,w:22,h:180},
+        {x:222,y:220,w:80,h:16},{x:442,y:300,w:80,h:16},
+        {x:662,y:260,w:80,h:16}
+    ],
+    // Capas tipo red neuronal: pasillos laterales abiertos
+    nucleo: [
+        {x:150,y:40,w:20,h:130},{x:150,y:390,w:20,h:190},
+        {x:330,y:40,w:20,h:110},{x:330,y:430,w:20,h:150},
+        {x:650,y:40,w:20,h:110},{x:650,y:430,w:20,h:150},
+        {x:830,y:40,w:20,h:130},{x:830,y:390,w:20,h:190}
+    ],
+    oscura: [
+        {x:190,y:80,w:22,h:180},{x:190,y:360,w:22,h:220},
+        {x:390,y:40,w:22,h:180},{x:390,y:360,w:22,h:220},
+        {x:590,y:100,w:22,h:160},{x:590,y:380,w:22,h:200},
+        {x:780,y:40,w:22,h:200},{x:780,y:380,w:22,h:200},
+        {x:212,y:280,w:70,h:14},{x:412,y:280,w:70,h:14}
+    ],
+    fantasma: [
+        {x:200,y:40,w:20,h:150},{x:200,y:310,w:20,h:270},
+        {x:420,y:80,w:20,h:180},{x:420,y:400,w:20,h:180},
+        {x:640,y:140,w:20,h:160},{x:640,y:420,w:20,h:160},
+        {x:820,y:40,w:20,h:180},{x:820,y:360,w:20,h:220}
+    ],
+    // Arenas abiertas para peleas de jefe
+    virus: [
+        {x:180,y:140,w:50,h:50},{x:480,y:260,w:55,h:55},
+        {x:780,y:140,w:50,h:50},{x:320,y:420,w:50,h:50},
+        {x:650,y:420,w:50,h:50}
+    ],
+    brote: [
+        {x:200,y:100,w:45,h:160},{x:200,y:360,w:45,h:160},
+        {x:750,y:100,w:45,h:160},{x:750,y:360,w:45,h:160},
+        {x:470,y:270,w:60,h:60}
+    ],
+    supremo: [
+        {x:150,y:150,w:40,h:40},{x:150,y:420,w:40,h:40},
+        {x:810,y:150,w:40,h:40},{x:810,y:420,w:40,h:40},
+        {x:480,y:80,w:40,h:40},{x:480,y:480,w:40,h:40}
+    ]
+};
+
+const posicionesLlaves = [
+    {x:120,y:120}, {x:340,y:200}, {x:600,y:100},
+    {x:120,y:480}, {x:380,y:450}, {x:640,y:400},
+    {x:860,y:140}, {x:860,y:420},
+    {x:500,y:300}, {x:300,y:80}, {x:700,y:280}, {x:900,y:300}
+];
+
+// Nivel 3: llaves en pasillos abiertos (accesibles)
+const posicionesLlavesRestringida = [
+    {x:90, y:100},
+    {x:280, y:130},
+    {x:500, y:90},
+    {x:90, y:480},
+    {x:300, y:470},
+    {x:520, y:460},
+    {x:720, y:120},
+    {x:880, y:460}
+];
+
+const spawnEnemigosRestringida = [
+    {x:270,y:80}, {x:490,y:130}, {x:700,y:90},
+    {x:270,y:450}, {x:490,y:470}, {x:700,y:450}
+];
+
+// Nivel 8 (virus): llaves bien separadas y lejos de muros
+const posicionesLlavesVirus = [
+    {x:80, y:90},
+    {x:280, y:160},
+    {x:480, y:80},
+    {x:80, y:500},
+    {x:420, y:500},
+    {x:880, y:120},
+    {x:680, y:480},
+    {x:900, y:450}
+];
+
+function pressKey(key, isDown) {
+    if(panelCodigoAbierto && isDown) return;
+    teclas[key.toLowerCase()] = isDown;
+    if(key.startsWith("Arrow")) teclas[key] = isDown;
+    if(key.toLowerCase() === "e" && isDown) usarHabilidad();
+    if((key === " " || key === "Space") && isDown) atacar();
+}
+
+document.addEventListener("keydown", e => {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+    pressKey(e.key, true);
+});
+document.addEventListener("keyup", e => {
+    pressKey(e.key, false);
+});
+window.addEventListener("blur", () => { teclas = {}; });
+
+document.querySelectorAll(".dpad-btn, #actionBtn, #btnAtacar").forEach(btn => {
+    const soltar = () => {
+        btn.classList.remove("pressed");
+        const k = btn.getAttribute("data-key");
+        if(k && k !== " " && k !== "e") pressKey(k, false);
+    };
+    btn.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { btn.setPointerCapture(e.pointerId); } catch(_){}
+        btn.classList.add("pressed");
+        const k = btn.getAttribute("data-key");
+        if(btn.id === "btnAtacar" || k === " ") atacar();
+        else if(btn.id === "actionBtn" || k === "e") usarHabilidad();
+        else pressKey(k, true);
+    });
+    btn.addEventListener("pointerup", e => { e.preventDefault(); soltar(); });
+    btn.addEventListener("pointercancel", soltar);
+    btn.addEventListener("lostpointercapture", soltar);
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+});
+
+function esEscritorio(){
+    try{
+        return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    }catch(_){ return !("ontouchstart" in window); }
+}
+function esDispositivoTactil(){
+    // En PC/laptop (aunque tenga touch) no mostramos controles de teléfono
+    if(esEscritorio()) return false;
+    try{
+        if(window.matchMedia("(pointer: coarse)").matches) return true;
+        if(window.matchMedia("(hover: none)").matches) return true;
+        if(window.matchMedia("(max-width: 900px)").matches) return true;
+    }catch(_){}
+    return false;
+}
+/** Muestra u oculta el D-pad / botones táctiles (solo teléfono/tablet). */
+function setControlesMovil(on){
+    const el = document.getElementById("mobileControls");
+    if(!el) return;
+    el.style.removeProperty("display");
+    el.style.removeProperty("visibility");
+    if(on && esDispositivoTactil()){
+        el.classList.add("active");
+        el.style.setProperty("display", "flex", "important");
+        el.style.setProperty("visibility", "visible", "important");
+    } else {
+        el.classList.remove("active");
+        el.style.setProperty("display", "none", "important");
+        el.style.setProperty("visibility", "hidden", "important");
+    }
+}
+
+document.getElementById("codigoInput").addEventListener("keydown", e => {
+    if(e.key === "Enter") verificarCodigo();
+});
+
+function personajeDesbloqueado(p){
+    if(!p.unlockNivel) return true;
+    const maxN = (perfilJugador && perfilJugador.maxNivel) || 1;
+    if(maxN >= p.unlockNivel) return true;
+    return !!(perfilJugador && perfilJugador.unlocked && perfilJugador.unlocked.includes(p.id));
+}
+
+function renderSeleccion(){
+    let grid = document.getElementById("gridChars");
+    grid.innerHTML = "";
+    personajes.forEach(p => {
+        const unlocked = personajeDesbloqueado(p);
+        let card = document.createElement("div");
+        card.className = "charCard" + (personaje && personaje.id === p.id ? " selected" : "") + (!unlocked ? " locked" : "");
+        card.innerHTML =
+            `<img src="${p.img}" alt="${p.nombre}">` +
+            `<h3 style="color:${p.color}">${p.nombre}</h3>` +
+            `<div class="rol">${p.rol}</div>` +
+            `<div class="hab">⚡ ${p.hab}</div>` +
+            (!unlocked ? `<div class="lockTag">🔒 Se desbloquea en el nivel ${p.unlockNivel}</div>` : "");
+        card.onclick = () => {
+            if(!unlocked){
+                document.getElementById("detalleChar").innerHTML =
+                    `🔒 <b style="color:${p.color}">${p.nombre}</b> se desbloquea al llegar al <b>nivel ${p.unlockNivel}</b>.`;
+                return;
+            }
+            seleccionarPersonaje(p.id);
+        };
+        grid.appendChild(card);
+    });
+}
+
+function seleccionarPersonaje(id){
+    const p = personajes.find(x => x.id === id);
+    if(!p || !personajeDesbloqueado(p)) return;
+    personaje = p;
+    imgPerso.src = personaje.img;
+    imgSheet.src = personaje.sheet;
+    document.getElementById("detalleChar").innerHTML =
+        `<b style="color:${personaje.color}">${personaje.nombre}</b> — ${personaje.detalle}<br>⚡ ${personaje.hab}` +
+        (personaje.arma ? `<br>⚔ Arma: ${personaje.arma.nombre}` : "");
+    document.getElementById("btnJugar").disabled = false;
+    renderSeleccion();
+}
+
+function dirDesdeInput(dx, dy){
+    if(dx === 0 && dy === 0) return anim.dir;
+    // 8 direcciones
+    if(dx === 0 && dy > 0) return 0; // s
+    if(dx < 0 && dy > 0) return 1;   // sw
+    if(dx < 0 && dy === 0) return 2; // w
+    if(dx < 0 && dy < 0) return 3;   // nw
+    if(dx === 0 && dy < 0) return 4; // n
+    if(dx > 0 && dy < 0) return 5;   // ne
+    if(dx > 0 && dy === 0) return 6; // e
+    if(dx > 0 && dy > 0) return 7;   // se
+    return anim.dir;
+}
+
+function actualizarAnimacion(moving){
+    if(anim.hurtTimer > 0){
+        anim.hurtTimer--;
+        anim.estado = "hurt";
+    } else if(moving){
+        anim.estado = "walk";
+    } else {
+        anim.estado = "idle";
+    }
+    anim.timer++;
+    let speed = anim.estado === "walk" ? 6 : (anim.estado === "hurt" ? 4 : 12);
+    if(anim.timer >= speed){
+        anim.timer = 0;
+        let max = anim.frames[anim.estado] || 2;
+        anim.frame = (anim.frame + 1) % max;
+    }
+}
+
+function dibujarPersonajeSheet(x, y, drawW, drawH){
+    // Usar sprite grande y visible; animación = bob / flip / tinte daño
+    if(!imgPerso.complete || imgPerso.naturalWidth === 0){
+        ctx.fillStyle = personaje ? personaje.color : "#00ffff";
+        ctx.fillRect(x, y, drawW, drawH);
+        return;
+    }
+    let bob = 0;
+    if(anim.estado === "walk") bob = (anim.frame % 2 === 0) ? -3 : 1;
+    else if(anim.estado === "idle") bob = (anim.frame % 2 === 0) ? 0 : -2;
+
+    ctx.save();
+    let flip = (anim.dir === 1 || anim.dir === 2 || anim.dir === 3); // oeste
+    if(flip){
+        ctx.translate(x + drawW, y + bob);
+        ctx.scale(-1, 1);
+        ctx.drawImage(imgPerso, 0, 0, drawW, drawH);
+    } else {
+        ctx.drawImage(imgPerso, x, y + bob, drawW, drawH);
+    }
+    if(anim.estado === "hurt"){
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = "rgba(255,40,40,0.45)";
+        if(flip) ctx.fillRect(0, 0, drawW, drawH);
+        else ctx.fillRect(x, y + bob, drawW, drawH);
+    }
+    ctx.restore();
+}
+
+const DIALOGOS_HACKER = {
+    1: "Yo te encerré aquí. Cada nivel se pondrá peor. No hay escape fácil.",
+    2: "¿Creíste que sería fácil? Los servidores ya te están cazando.",
+    3: "Zona restringida. Un paso en falso y borraré tu existencia.",
+    4: "Mi firewall te quema. Corre... si aún puedes.",
+    5: "La Red Neuronal te observa. Yo controlo cada impulso.",
+    6: "En la oscuridad solo queda tu miedo... y yo.",
+    7: "Código Fantasma. Ni con la clave escaparás de mí para siempre.",
+    8: "¡Pelea! Derrota a mi Proceso Fantasma. ESPACIO para atacar.",
+    9: "El Núcleo Botnet invoca esbirros. Acaba con él si puedes.",
+    10: "Detonación final. Ataca la bomba antes de que el sistema explote."
+};
+
+let hackerTimer = null;
+
+function textoHacker(n){
+    return DIALOGOS_HACKER[n] || DIALOGOS_HACKER[1];
+}
+
+function actualizarHackerUI(n){
+    const juego = document.getElementById("hackerTexto");
+    if(juego) juego.innerHTML = textoHacker(n);
+}
+
+function mostrarPanelHacker(show){
+    const el = document.getElementById("panelHacker");
+    if(hackerTimer){ clearTimeout(hackerTimer); hackerTimer = null; }
+    el.classList.remove("hiding");
+    if(show){
+        el.classList.add("visible");
+        // La burbuja se queda unos segundos y luego se oculta sola
+        hackerTimer = setTimeout(() => {
+            el.classList.add("hiding");
+            setTimeout(() => {
+                el.classList.remove("visible", "hiding");
+            }, 400);
+        }, 6500);
+    } else {
+        el.classList.remove("visible");
+    }
+}
+
+function mostrarIntroVirus(n){
+    let data = niveles[n - 1];
+    let m = malwares[data.malware];
+    malwareNivel = m;
+    document.getElementById("introNivelTitulo").innerHTML = "NIVEL " + data.numero + " — " + data.nombre.toUpperCase();
+    document.getElementById("introVirusNombre").innerHTML = "☣ " + m.nombre;
+    document.getElementById("introVirusImg").src = m.intro || m.archivo;
+    document.getElementById("introVirusInfo").innerHTML = m.info;
+    document.getElementById("introVirusTip").innerHTML = "Consejo: " + m.tip;
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    canvas.style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.body.classList.remove("modo-pelea");
+    document.getElementById("mobileControls").classList.remove("active");
+    setControlesMovil(false);
+    document.getElementById("btnAtacar").classList.remove("show");
+    document.getElementById("bossHUD").style.display = "none";
+    mostrarPanelHacker(false);
+    document.getElementById("introVirus").style.display = "flex";
+    window._nivelPendiente = n;
+    reiniciarMusicaNivel(n);
+}
+
+function empezarNivelTrasIntro(){
+    document.getElementById("login").style.display = "none";
+    document.getElementById("introVirus").style.display = "none";
+    document.getElementById("hud").style.display = "flex";
+    document.getElementById("nombreNivel").style.display = "block";
+    canvas.style.display = "block";
+    document.body.classList.add("modo-juego");
+    setControlesMovil(true);
+    const n = window._nivelPendiente || 1;
+    actualizarHackerUI(n);
+    cargarNivel(n);
+    actualizarHabHUD();
+    jugando = true;
+    crearTiempo();
+    iniciarHeartbeatJuego();
+    loop();
+    // La burbuja del hacker aparece al empezar a jugar
+    mostrarPanelHacker(true);
+}
+
+function mostrarSeleccion(){
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("selectPersonaje").style.display = "flex";
+    renderSeleccion();
+}
+
+function volverMenu(){
+    document.getElementById("selectPersonaje").style.display = "none";
+    document.getElementById("menu").style.display = "flex";
+}
+
+function actualizarHabHUD(){
+    let el = document.getElementById("habHUD");
+    if(!personaje){ el.style.display = "none"; return; }
+    el.style.display = "block";
+    const tecla = (typeof esDispositivoTactil === "function" && esDispositivoTactil()) ? "⚡" : "E";
+    let txt = personaje.nombre + ": ";
+    if(personaje.id === "firewall" || personaje.id === "engineer") txt += escudoActivo ? "Escudo LISTO" : "Escudo usado";
+    else if(personaje.id === "patch") txt += patchUsos > 0 ? (tecla + " +1 vida (" + patchUsos + ")") : "Parches usados";
+    else if(personaje.id === "shadow") txt += sombraUsada ? (sombraTimer>0?"SIGILO...":"Sigilo usado") : (tecla + " Sigilo 4s");
+    else if(personaje.id === "ghostp") txt += sombraUsada ? (sombraTimer>0?"INTANGIBLE...":"Intangibilidad usada") : (tecla + " Intangibilidad");
+    else if(personaje.id === "nexus") txt += nexusUsado ? (ralentizarTimer>0?"RALENTIZANDO...":"Congelar usado") : (tecla + " Ralentizar 5s");
+    else if(personaje.id === "zero") txt += zeroUsado ? (zeroSpeedTimer>0?"VELOCIDAD CUÁNTICA...":"Velocidad usada") : (tecla + " Velocidad");
+    else if(personaje.id === "byte") txt += "+50 pts/llave · pista de código";
+    else if(personaje.id === "scan") txt += "visión ampliada · radar amplio";
+    else if(personaje.id === "guard") txt += "4 vidas · más invencibilidad";
+    el.innerHTML = txt;
+    el.style.borderColor = personaje.color;
+    el.style.color = personaje.color;
+}
+
+/** Activa la habilidad del personaje (tecla E o botón ⚡). */
+function usarHabilidad(){
+    if(!jugando || !personaje) return;
+
+    if(personaje.id === "patch" && patchUsos > 0){
+        if(vidas >= 5) return;
+        vidas++;
+        patchUsos--;
+        invencible = Math.max(invencible, 60);
+        document.getElementById("vidas").innerHTML = vidas;
+        sonidoClick();
+        actualizarHabHUD();
+        return;
+    }
+    if((personaje.id === "shadow" || personaje.id === "ghostp") && !sombraUsada){
+        sombraUsada = true;
+        sombraTimer = DUR_SIGILO;
+        invencible = Math.max(invencible, DUR_SIGILO);
+        sonidoClick();
+        actualizarHabHUD();
+        return;
+    }
+    if(personaje.id === "nexus" && !nexusUsado){
+        nexusUsado = true;
+        ralentizarTimer = DUR_CONGELAR;
+        sonidoClick();
+        actualizarHabHUD();
+        return;
+    }
+    if(personaje.id === "zero" && !zeroUsado){
+        zeroUsado = true;
+        zeroSpeedTimer = DUR_ZERO_SPEED;
+        jugador.vel = velBaseJugador * 1.7;
+        sonidoClick();
+        actualizarHabHUD();
+    }
+}
+
+function resetHabilidadesNivel(){
+    escudoActivo = personaje && (personaje.id === "firewall" || personaje.id === "engineer");
+    patchUsos = (personaje && personaje.id === "patch") ? PATCH_USOS_NIVEL : 0;
+    sombraUsada = false;
+    sombraTimer = 0;
+    nexusUsado = false;
+    ralentizarTimer = 0;
+    zeroUsado = false;
+    zeroSpeedTimer = 0;
+    velBaseJugador = (personaje && personaje.id === "byte") ? 6.5 : ((personaje && personaje.id === "zero") ? 6.0 : 5.5);
+    jugador.vel = velBaseJugador;
+    actualizarHabHUD();
+}
+
+function colision(a,b){
+    return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function chocaMuro(obj){
+    for(let m of muros) if(colision(obj,m)) return true;
+    // firewalls cerrados actúan como muro
+    for(let f of firewalls){
+        if(f.abierto) continue;
+        if(colision(obj, f)) return true;
+    }
+    return false;
+}
+
+function generarCodigo(){
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let c = "";
+    for(let i=0;i<4;i++) c += chars[Math.floor(Math.random()*chars.length)];
+    return c;
+}
+
+function nombreJefe(tema){
+    if(tema === "virus") return "PROCESO FANTASMA";
+    if(tema === "brote") return "NÚCLEO BOTNET";
+    if(tema === "supremo") return "BOMBA LÓGICA";
+    return "JEFE VIRUS";
+}
+
+function actualizarBossHUD(){
+    const el = document.getElementById("bossHUD");
+    if(!modoPelea){ el.style.display = "none"; return; }
+    const jefe = enemigos.find(e => e.jefe && e.hp > 0);
+    if(!jefe){
+        if(jefeDerrotado){
+            el.style.display = "block";
+            document.getElementById("bossName").innerHTML = "✔ JEFE ELIMINADO";
+            document.getElementById("bossBar").style.width = "0%";
+            document.getElementById("bossHint").innerHTML = "Recoge las llaves y escapa por la puerta";
+        } else {
+            el.style.display = "none";
+        }
+        return;
+    }
+    el.style.display = "block";
+    document.getElementById("bossName").innerHTML = "☠ " + (jefe.titulo || "JEFE") + "  " + jefe.hp + "/" + jefe.maxHp;
+    document.getElementById("bossBar").style.width = Math.max(0, (jefe.hp / jefe.maxHp) * 100) + "%";
+    const arma = getArma();
+    let hint = (arma.icon || "⚔") + " " + arma.nombre + " · ESPACIO / ATACAR";
+    if(jefe.tema === "supremo") hint = "Frena la DETONACIÓN con tu " + arma.nombre;
+    if(jefe.tema === "brote") hint = "Usa tu " + arma.nombre + " contra el Núcleo";
+    if(jefe.tema === "virus") hint = "Persigue al fantasma con tu " + arma.nombre;
+    document.getElementById("bossHint").innerHTML = hint;
+}
+
+/** Spawnea enemigos del malware del nivel; si data.pelea, crea al jefe. */
+function generarEnemigos(data){
+    enemigos = [];
+    proyectiles = [];
+    efectosAtaque = [];
+    ataqueCooldown = 0;
+    jefeDerrotado = false;
+    modoPelea = !!data.pelea;
+    document.body.classList.toggle("modo-pelea", modoPelea);
+    malwareNivel = malwares[data.malware] || malwares.virus;
+    let tamW = data.scary ? 56 : 50;
+    let tamH = data.scary ? 68 : 60;
+
+    for(let i=0;i<data.enemigos;i++){
+        let arriba = i % 2 === 0;
+        let col = Math.floor(i/2);
+        let fantasma = data.tema === "fantasma";
+        let sx = 200 + (col%4)*150;
+        let sy = arriba ? (70+(col%2)*40) : (420+(col%2)*30);
+        if(data.tema === "restringida"){
+            const sp = spawnEnemigosRestringida[i % spawnEnemigosRestringida.length];
+            sx = sp.x; sy = sp.y;
+        }
+        enemigos.push({
+            x: sx,
+            y: sy,
+            w: tamW, h: tamH,
+            velX: (i%2===0?1:-1) * data.velocidad,
+            velY: (i%3===0?1:-1) * (data.velocidad*0.4),
+            jefe:false,
+            fantasma,
+            malware: data.malware,
+            dir: i%2===0 ? "h" : "v",
+            hp: 1
+        });
+    }
+
+    if(data.jefe){
+        let tamWj = data.scary ? 118 : 100;
+        let tamHj = data.scary ? 138 : 116;
+        enemigos.push({
+            x: 440, y: 200, w: tamWj, h: tamHj,
+            jefe:true, scary:!!data.scary,
+            malware: data.malware,
+            tema: data.tema,
+            titulo: nombreJefe(data.tema),
+            velocidadJefe: data.jefeVel || 2.2,
+            maxHp: data.jefeHp || 12,
+            hp: data.jefeHp || 12,
+            invuln: 0,
+            fase: 0,
+            timer: 0,
+            carga: 0,
+            flash: 0
+        });
+    }
+
+    const btnAtk = document.getElementById("btnAtacar");
+    btnAtk.classList.toggle("show", modoPelea);
+    if(modoPelea && personaje && personaje.arma){
+        btnAtk.innerHTML = (personaje.arma.icon || "⚔") + "<span>" + (personaje.arma.nombre.split(" ")[0].toUpperCase()) + "</span>";
+    } else {
+        btnAtk.innerHTML = "⚔<span>ATACAR</span>";
+    }
+    actualizarBossHUD();
+}
+
+function getArma(){
+    if(personaje && personaje.arma) return personaje.arma;
+    return { nombre:"Ataque", tipo:"melee", cooldown:16, daño:1, reach:55, w:56, h:56, icon:"⚔", color:"#00ffff" };
+}
+
+function spawnDesvanecer(x, y, w, h){
+    const cx = x + (w || 40) / 2;
+    const cy = y + (h || 40) / 2;
+    const bits = [];
+    for(let i = 0; i < 22; i++){
+        const ang = (Math.PI * 2 * i) / 22 + Math.random() * 0.4;
+        bits.push({
+            ch: Math.random() > 0.45 ? "1" : "0",
+            ang,
+            dist: 8 + Math.random() * 16,
+            spd: 1.1 + Math.random() * 1.8,
+            rot: (Math.random() - 0.5) * 0.12,
+            size: 11 + Math.floor(Math.random() * 6)
+        });
+    }
+    // algunos números hex / código
+    for(let i = 0; i < 6; i++){
+        const ang = Math.random() * Math.PI * 2;
+        bits.push({
+            ch: ["A","B","C","D","E","F","8","9"][i],
+            ang,
+            dist: 14 + Math.random() * 10,
+            spd: 0.9 + Math.random(),
+            rot: (Math.random() - 0.5) * 0.08,
+            size: 10
+        });
+    }
+    efectosAtaque.push({
+        tipo: "desvanecer",
+        x: cx, y: cy,
+        life: 40,
+        maxLife: 40,
+        radio: Math.max(18, ((w || 40) + (h || 40)) / 5),
+        bits
+    });
+    tono(90, 0.12, "sawtooth", 0.07);
+    tono(140, 0.1, "square", 0.05);
+}
+
+function spawnCirculoDanio(x, y, w, h){
+    const cx = x + (w || 40) / 2;
+    const cy = y + (h || 40) / 2;
+    const bits = [];
+    for(let i = 0; i < 10; i++){
+        bits.push({
+            ch: Math.random() > 0.5 ? "1" : "0",
+            ang: (Math.PI * 2 * i) / 10,
+            dist: 6 + Math.random() * 8,
+            spd: 0.8 + Math.random(),
+            rot: (Math.random() - 0.5) * 0.1,
+            size: 10
+        });
+    }
+    efectosAtaque.push({
+        tipo: "desvanecer",
+        x: cx, y: cy,
+        life: 18,
+        maxLife: 18,
+        radio: Math.max(10, ((w || 40) + (h || 40)) / 8),
+        bits
+    });
+}
+
+function aplicarDanioArma(e, daño, arma){
+    if(!e || e.hp <= 0) return false;
+    if(e.jefe && e.invuln > 0) return false;
+    const dmg = Math.max(1, daño || 1);
+    if(e.jefe){
+        e.hp -= dmg;
+        e.invuln = 10;
+        e.flash = 10;
+        if(e.tema === "supremo") e.carga = Math.max(0, e.carga - 12 * dmg);
+        puntos += 20 * dmg;
+        document.getElementById("puntos").innerHTML = puntos;
+        tono(180 + dmg * 40, 0.08, "sawtooth", 0.08);
+        spawnCirculoDanio(e.x, e.y, e.w, e.h);
+        if(arma && arma.healOnHit && Math.random() < 0.18 && vidas < 5){
+            vidas++;
+            document.getElementById("vidas").innerHTML = vidas;
+        }
+        if(e.hp <= 0){
+            jefeDerrotado = true;
+            puntos += 400;
+            document.getElementById("puntos").innerHTML = puntos;
+            sonidoMoneda();
+            spawnDesvanecer(e.x, e.y, e.w, e.h);
+            const idx = enemigos.indexOf(e);
+            if(idx >= 0) enemigos.splice(idx, 1);
+        }
+        actualizarBossHUD();
+        return true;
+    }
+    // minion
+    spawnDesvanecer(e.x, e.y, e.w, e.h);
+    const idx = enemigos.indexOf(e);
+    if(idx >= 0) enemigos.splice(idx, 1);
+    puntos += 40;
+    document.getElementById("puntos").innerHTML = puntos;
+    tono(360, 0.06, "square", 0.05);
+    return true;
+}
+
+function hitboxCuerpo(e){
+    return e.jefe
+        ? { x:e.x+e.w*0.15, y:e.y+e.h*0.1, w:e.w*0.7, h:e.h*0.7 }
+        : e;
+}
+
+function atacar(){
+    if(!jugando || !modoPelea || !personaje || ataqueCooldown > 0) return;
+    const arma = getArma();
+    ataqueCooldown = arma.cooldown || 16;
+    const jx = jugador.x + jugador.w/2;
+    const jy = jugador.y + jugador.h/2;
+    const color = personaje.color || "#00ffff";
+
+    // Sonido distinto por tipo
+    if(arma.tipo === "melee"){ tono(420, 0.06, "square", 0.07); tono(260, 0.08, "sawtooth", 0.05); }
+    else if(arma.tipo === "haz"){ tono(900, 0.08, "sine", 0.06); }
+    else { tono(640, 0.05, "triangle", 0.06); tono(880, 0.06, "square", 0.04); }
+
+    if(arma.tipo === "melee"){
+        const reach = arma.reach || 55;
+        const hits = arma.hits || 1;
+        for(let h = 0; h < hits; h++){
+            const spread = (h - (hits-1)/2) * 18;
+            const ox = facing.x * reach - (arma.w||56)/2 + facing.y * spread;
+            const oy = facing.y * reach - (arma.h||56)/2 - facing.x * spread;
+            const hit = { x:jx + ox, y:jy + oy, w:arma.w||56, h:arma.h||56 };
+            efectosAtaque.push({
+                x:hit.x, y:hit.y, w:hit.w, h:hit.h, life:7 + h*2,
+                color, icon: arma.icon, estilo:"melee"
+            });
+            for(let i = enemigos.length - 1; i >= 0; i--){
+                let e = enemigos[i];
+                if(colision(hit, hitboxCuerpo(e))){
+                    aplicarDanioArma(e, arma.daño, arma);
+                }
+            }
+        }
+        return;
+    }
+
+    if(arma.tipo === "haz"){
+        // Rayo instantáneo en línea
+        const reach = arma.reach || 160;
+        const steps = 10;
+        efectosAtaque.push({
+            x:jx, y:jy, fx:facing.x, fy:facing.y, reach, life:6,
+            color, icon:arma.icon, estilo:"haz"
+        });
+        for(let s = 1; s <= steps; s++){
+            const px = jx + facing.x * (reach * s / steps) - 8;
+            const py = jy + facing.y * (reach * s / steps) - 8;
+            const hit = { x:px, y:py, w:16, h:16 };
+            for(let i = enemigos.length - 1; i >= 0; i--){
+                let e = enemigos[i];
+                if(colision(hit, hitboxCuerpo(e))){
+                    aplicarDanioArma(e, arma.daño, arma);
+                }
+            }
+        }
+        return;
+    }
+
+    // Proyectil (BYTE, PATCH, NEXUS)
+    proyectiles.push({
+        x: jx - (arma.w||12)/2,
+        y: jy - (arma.h||12)/2,
+        w: arma.w || 12,
+        h: arma.h || 12,
+        vx: facing.x * (arma.speed || 8),
+        vy: facing.y * (arma.speed || 8),
+        life: arma.life || 28,
+        daño: arma.daño || 1,
+        color,
+        icon: arma.icon || "•",
+        seeking: !!arma.seeking,
+        healOnHit: !!arma.healOnHit,
+        dueño: personaje.id
+    });
+}
+
+function moverProyectiles(){
+    for(let i = proyectiles.length - 1; i >= 0; i--){
+        let p = proyectiles[i];
+        if(p.seeking){
+            const jefe = enemigos.find(e => e.jefe && e.hp > 0);
+            if(jefe){
+                const cx = p.x + p.w/2, cy = p.y + p.h/2;
+                const jx = jefe.x + jefe.w/2, jy = jefe.y + jefe.h/2;
+                const dx = jx - cx, dy = jy - cy;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                const spd = Math.sqrt(p.vx*p.vx + p.vy*p.vy) || 6;
+                p.vx = p.vx * 0.82 + (dx/dist) * spd * 0.35;
+                p.vy = p.vy * 0.82 + (dy/dist) * spd * 0.35;
+            }
+        }
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if(p.x < -40 || p.y < -40 || p.x > 1040 || p.y > 640 || p.life <= 0){
+            proyectiles.splice(i, 1);
+            continue;
+        }
+        let golpe = false;
+        for(let j = enemigos.length - 1; j >= 0; j--){
+            let e = enemigos[j];
+            if(colision(p, hitboxCuerpo(e))){
+                aplicarDanioArma(e, p.daño, p);
+                golpe = true;
+                break;
+            }
+        }
+        if(golpe) proyectiles.splice(i, 1);
+    }
+}
+
+function generarLlaves(n, tema){
+    llavesMapa = [];
+    const preferred =
+        tema === "virus" ? posicionesLlavesVirus :
+        tema === "restringida" ? posicionesLlavesRestringida :
+        tema === "firewall" ? [
+            {x:90,y:100},{x:280,y:140},{x:500,y:90},{x:90,y:480},
+            {x:320,y:470},{x:720,y:120},{x:880,y:460},{x:560,y:450}
+        ] :
+        tema === "nucleo" ? [
+            {x:70,y:90},{x:200,y:480},{x:500,y:90},{x:850,y:90},
+            {x:850,y:480},{x:70,y:480},{x:500,y:500},{x:350,y:90}
+        ] :
+        tema === "oscura" ? [
+            {x:90,y:120},{x:280,y:200},{x:480,y:90},{x:90,y:480},
+            {x:450,y:470},{x:620,y:200},{x:850,y:120},{x:850,y:460}
+        ] :
+        tema === "fantasma" ? [
+            {x:90,y:100},{x:280,y:220},{x:500,y:90},{x:90,y:480},
+            {x:450,y:470},{x:700,y:220},{x:880,y:120},{x:880,y:460}
+        ] :
+        tema === "servidores" ? [
+            {x:90,y:100},{x:320,y:220},{x:560,y:100},{x:90,y:480},
+            {x:360,y:470},{x:760,y:280},{x:880,y:120},{x:880,y:460}
+        ] :
+        tema === "brote" || tema === "supremo" ? [
+            {x:80,y:90},{x:480,y:90},{x:880,y:90},{x:80,y:500},
+            {x:480,y:500},{x:880,y:500},{x:300,y:300},{x:700,y:300}
+        ] :
+        posicionesLlaves;
+
+    const ocupado = [];
+    const chocaPared = (obj) => {
+        for(let m of muros) if(colision(obj, m)) return true;
+        return false;
+    };
+    const libre = (x,y) => {
+        const probe = { x, y, w:40, h:26 };
+        if(chocaPared(probe)) return false;
+        if(x < 30 || y < 50 || x > 930 || y > 540) return false;
+        if(x < 100 && y < 120) return false;
+        if(x > 860 && y > 460) return false;
+        for(const o of ocupado){
+            if(Math.abs(o.x-x)<55 && Math.abs(o.y-y)<45) return false;
+        }
+        return true;
+    };
+
+    for(let i=0;i<n;i++){
+        let placed = null;
+        for(let k=0;k<preferred.length;k++){
+            const p = preferred[(i + k) % preferred.length];
+            if(libre(p.x, p.y)){ placed = {x:p.x,y:p.y}; break; }
+        }
+        if(!placed){
+            outer:
+            for(let y=70; y<=500; y+=70){
+                for(let x=70; x<=880; x+=90){
+                    if(libre(x,y)){ placed = {x,y}; break outer; }
+                }
+            }
+        }
+        if(!placed) placed = { x: 140 + (i%4)*180, y: 160 + Math.floor(i/4)*160 };
+        ocupado.push(placed);
+        llavesMapa.push({ x:placed.x, y:placed.y, w:40, h:26, activa:true });
+    }
+}
+
+/** Prepara decoración/mecánicas del tema: láseres, firewalls, núcleos, código fantasma, etc. */
+function prepararTema(data){
+    temaActual = temas[data.tema];
+    lasers = [];
+    firewalls = [];
+    servidores = [];
+    nodosIA = [];
+    conexionesNN = [];
+    impulsosNN = [];
+    zonasInfeccion = [];
+    nucleo = null;
+    codigoDesbloqueado = false;
+    codigoIngresado = false;
+    codigoSecreto = "";
+    document.getElementById("avisoCodigo").style.display = "none";
+    canvas.style.borderColor = temaActual.borde;
+    canvas.style.boxShadow = `0 0 20px ${temaActual.glow}, 0 0 50px ${temaActual.glow}`;
+
+    if(data.tema === "servidores"){
+        servidores = [
+            {x:260,y:120,w:70,h:110},{x:260,y:380,w:70,h:110},
+            {x:480,y:80,w:70,h:110},{x:480,y:400,w:70,h:110},
+            {x:700,y:150,w:70,h:110}
+        ];
+    }
+    if(data.tema === "restringida"){
+        // Láseres en pasillos abiertos; ~45% apagados para poder cruzar
+        lasers = [
+            {x:230,y:250,w:90,h:5, on:true, timer:0, periodo:80, eje:"h"},
+            {x:450,y:160,w:5,h:90, on:false, timer:20, periodo:70, eje:"v"},
+            {x:550,y:310,w:90,h:5, on:true, timer:35, periodo:75, eje:"h"},
+            {x:700,y:180,w:5,h:90, on:false, timer:10, periodo:70, eje:"v"},
+            {x:420,y:470,w:100,h:5, on:true, timer:40, periodo:85, eje:"h"}
+        ];
+    }
+    if(data.tema === "firewall"){
+        firewalls = [
+            {x:250,y:250,w:130,h:16, abierto:false, timer:0, ciclo:100},
+            {x:470,y:170,w:16,h:140, abierto:false, timer:40, ciclo:85},
+            {x:680,y:300,w:120,h:16, abierto:true, timer:60, ciclo:95}
+        ];
+    }
+    if(data.tema === "nucleo"){
+        // Núcleo = capa profunda / activación central
+        nucleo = { x:470, y:250, r:48, label:"DEEP" };
+        // Capas: entrada → oculta → salida (como una red neuronal)
+        let entrada = [
+            {x:90,y:120,capa:0},{x:90,y:220,capa:0},{x:90,y:320,capa:0},{x:90,y:420,capa:0}
+        ];
+        let oculta = [
+            {x:300,y:140,capa:1},{x:300,y:260,capa:1},{x:300,y:390,capa:1},
+            {x:700,y:140,capa:1},{x:700,y:260,capa:1},{x:700,y:390,capa:1}
+        ];
+        let salida = [
+            {x:910,y:160,capa:2},{x:910,y:280,capa:2},{x:910,y:400,capa:2}
+        ];
+        nodosIA = entrada.concat(oculta, salida);
+        conexionesNN = [];
+        // conectar capas vecinas + al núcleo
+        entrada.forEach(a => {
+            oculta.filter(o => o.x < 400).forEach(b => conexionesNN.push({a,b}));
+            conexionesNN.push({a, b:{x:470+48,y:250+48}});
+        });
+        oculta.forEach(a => {
+            conexionesNN.push({a, b:{x:470+48,y:250+48}});
+            if(a.x > 400){
+                salida.forEach(b => conexionesNN.push({a,b}));
+            }
+        });
+        impulsosNN = [];
+        for(let i=0;i<10;i++){
+            let c = conexionesNN[i % conexionesNN.length];
+            impulsosNN.push({ c, t: Math.random(), vel: 0.008 + Math.random()*0.01 });
+        }
+    }
+    if(data.tema === "fantasma"){
+        codigoSecreto = generarCodigo();
+    }
+    if(data.tema === "virus" || data.tema === "brote" || data.tema === "supremo"){
+        zonasInfeccion = [
+            {x:300,y:200,w:80,h:80, pulso:0},
+            {x:600,y:350,w:90,h:70, pulso:20},
+            {x:500,y:80,w:70,h:70, pulso:40}
+        ];
+    }
+}
+
+/** Carga muros, llaves, enemigos y reinicia HUD para el nivel n. */
+function cargarNivel(n){
+    let data = niveles[n-1];
+    if(!data) return;
+
+    nivelActual = data.numero;
+    llavesNecesarias = data.llaves;
+    llaves = 0;
+    tiempo = data.tiempo || 60;
+    vidas = (personaje && personaje.id === "guard") ? 4 : 3;
+    invencible = DUR_INV_INICIO;
+    teclas = {};
+    facing = { x:1, y:0 };
+    jefeDerrotado = false;
+    jugadorDesvanecido = false;
+    jugador.x = 40; jugador.y = 40;
+    jugador.w = 42; jugador.h = 50;
+    puerta.x = 900; puerta.y = 500;
+
+    muros = (layouts[data.tema] || layouts.infiltracion).map(m => ({...m}));
+    prepararTema(data);
+    generarLlaves(data.llaves, data.tema);
+    generarEnemigos(data);
+    resetHabilidadesNivel();
+    registrarProgresoNivel(data.numero);
+
+    document.getElementById("nivel").innerHTML = nivelActual;
+    document.getElementById("llaves").innerHTML = llaves + " / " + llavesNecesarias;
+    document.getElementById("tiempo").innerHTML = tiempo;
+    document.getElementById("vidas").innerHTML = vidas;
+    document.getElementById("puntos").innerHTML = puntos;
+    document.getElementById("nombreNivel").style.display = "block";
+    malwareNivel = malwares[data.malware] || malwares.virus;
+    document.getElementById("nombreNivel").innerHTML =
+        "NIVEL " + nivelActual + ": " + data.nombre.toUpperCase() +
+        " — ☣ " + malwareNivel.nombre;
+    document.getElementById("nombreNivel").style.color = temaActual.glow;
+    reiniciarMusicaNivel(nivelActual);
+}
+
+function iniciar(){
+    if(!perfilJugador){
+        alert("Primero registra tu nombre de jugador");
+        return;
+    }
+    if(!personaje){
+        alert("Elige un personaje primero");
+        return;
+    }
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("selectPersonaje").style.display = "none";
+    document.getElementById("hudJugador").innerHTML = perfilJugador.nombre;
+    document.getElementById("nombrePerso").innerHTML = personaje.nombre;
+    document.getElementById("nombrePerso").style.color = personaje.color;
+    puntos = 0;
+    jugando = false;
+    if(tiempoTimer){ clearInterval(tiempoTimer); tiempoTimer = null; }
+    asegurarAudio();
+    iniciarMusica();
+    mostrarIntroVirus(1);
+}
+
+function crearTiempo(){
+    if(tiempoTimer) clearInterval(tiempoTimer);
+    tiempoTimer = setInterval(() => {
+        if(!jugando) return;
+        tiempo--;
+        document.getElementById("tiempo").innerHTML = tiempo;
+        if(tiempo <= 0) perder();
+    }, 1000);
+}
+
+function moverJugador(){
+    let dx=0, dy=0;
+    if(teclas["ArrowUp"]||teclas["w"]) dy -= jugador.vel;
+    if(teclas["ArrowDown"]||teclas["s"]) dy += jugador.vel;
+    if(teclas["ArrowLeft"]||teclas["a"]) dx -= jugador.vel;
+    if(teclas["ArrowRight"]||teclas["d"]) dx += jugador.vel;
+
+    anim.dir = dirDesdeInput(dx, dy);
+    let moving = false;
+    if(dx !== 0 || dy !== 0){
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        facing.x = dx / len;
+        facing.y = dy / len;
+    }
+
+    if(dx!==0){
+        let p = { x:jugador.x+dx, y:jugador.y, w:jugador.w, h:jugador.h };
+        p.x = Math.max(0, Math.min(p.x, canvas.width-jugador.w));
+        if(!chocaMuro(p)){ jugador.x = p.x; moving = true; }
+    }
+    if(dy!==0){
+        let p = { x:jugador.x, y:jugador.y+dy, w:jugador.w, h:jugador.h };
+        p.y = Math.max(0, Math.min(p.y, canvas.height-jugador.h));
+        if(!chocaMuro(p)){ jugador.y = p.y; moving = true; }
+    }
+    actualizarAnimacion(moving);
+
+    // Núcleo IA empuja si te acercas demasiado
+    if(nucleo){
+        let cx = nucleo.x + nucleo.r, cy = nucleo.y + nucleo.r;
+        let jx = jugador.x + jugador.w/2, jy = jugador.y + jugador.h/2;
+        let dxn = jx-cx, dyn = jy-cy;
+        let dist = Math.sqrt(dxn*dxn+dyn*dyn) || 1;
+        if(dist < nucleo.r + 40){
+            let fuerza = (nucleo.r + 40 - dist) * 0.15;
+            let nx = jugador.x + (dxn/dist)*fuerza;
+            let ny = jugador.y + (dyn/dist)*fuerza;
+            let px = {x:nx,y:jugador.y,w:jugador.w,h:jugador.h};
+            let py = {x:jugador.x,y:ny,w:jugador.w,h:jugador.h};
+            if(!chocaMuro(px) && nx>0 && nx<canvas.width-jugador.w) jugador.x = nx;
+            if(!chocaMuro(py) && ny>0 && ny<canvas.height-jugador.h) jugador.y = ny;
+        }
+    }
+}
+
+function moverEnemigos(){
+    let factor = ralentizarTimer > 0 ? 0.35 : 1;
+    if(ralentizarTimer > 0){
+        ralentizarTimer--;
+        if(ralentizarTimer === 0) actualizarHabHUD();
+    }
+    if(sombraTimer > 0){
+        sombraTimer--;
+        if(sombraTimer === 0) actualizarHabHUD();
+    }
+    if(zeroSpeedTimer > 0){
+        zeroSpeedTimer--;
+        if(zeroSpeedTimer === 0){
+            jugador.vel = velBaseJugador;
+            actualizarHabHUD();
+        }
+    }
+    if(ataqueCooldown > 0) ataqueCooldown--;
+
+    enemigos.forEach(e => {
+        if(e.jefe){
+            if(e.invuln > 0) e.invuln--;
+            if(e.flash > 0) e.flash--;
+            e.timer++;
+            let cx=e.x+e.w/2, cy=e.y+e.h/2;
+            let jx=jugador.x+jugador.w/2, jy=jugador.y+jugador.h/2;
+            let dx=jx-cx, dy=jy-cy, dist=Math.sqrt(dx*dx+dy*dy)||1;
+
+            // Nivel 8: teletransporte cada ~3s
+            if(e.tema === "virus" && e.timer % 180 === 0){
+                e.x = Math.max(40, Math.min(jx - e.w/2 + (Math.random()-0.5)*120, canvas.width-e.w-40));
+                e.y = Math.max(40, Math.min(jy - e.h/2 + (Math.random()-0.5)*120, canvas.height-e.h-40));
+                e.flash = 14;
+            }
+            // Nivel 9: invoca minions
+            if(e.tema === "brote" && e.timer % 220 === 0){
+                let vivos = enemigos.filter(x => !x.jefe).length;
+                if(vivos < 5){
+                    enemigos.push({
+                        x: e.x + (Math.random()-0.5)*80,
+                        y: e.y + (Math.random()-0.5)*80,
+                        w: 44, h: 52,
+                        velX: (Math.random()>0.5?1:-1)*4.5,
+                        velY: (Math.random()>0.5?1:-1)*2.5,
+                        jefe:false, malware: e.malware, dir: Math.random()>0.5?"h":"v",
+                        patron:"rebote", hp:1
+                    });
+                }
+            }
+            // Nivel 10: carga de detonación
+            if(e.tema === "supremo"){
+                e.carga = Math.min(100, (e.carga || 0) + 0.12);
+                if(e.carga >= 100){
+                    e.carga = 0;
+                    if(invencible === 0) danio(1);
+                    efectosAtaque.push({ x:e.x-20, y:e.y-20, w:e.w+40, h:e.h+40, life:16, boom:true });
+                }
+            }
+
+            e.x += (dx/dist)*e.velocidadJefe * factor;
+            e.y += (dy/dist)*e.velocidadJefe * factor;
+            e.x = Math.max(20, Math.min(e.x, canvas.width-e.w-20));
+            e.y = Math.max(20, Math.min(e.y, canvas.height-e.h-20));
+            return;
+        }
+        if(e.dir==="h"){
+            e.x += e.velX * factor;
+            if(e.x>920||e.x<80) e.velX*=-1;
+        } else {
+            e.y += e.velY * factor;
+            if(e.y>540||e.y<40) e.velY*=-1;
+        }
+        if(e.velX===0 && e.dir==="h") e.velX=3;
+        if(e.velY===0 && e.dir==="v") e.velY=2;
+    });
+}
+
+function actualizarMecanicas(){
+    // Láseres zona restringida
+    lasers.forEach(l => {
+        l.timer++;
+        if(l.timer >= l.periodo){
+            l.timer = 0;
+            l.on = !l.on;
+        }
+        if(l.on && invencible===0 && colision(jugador,l)){
+            danio(1);
+        }
+    });
+
+    // Firewalls abren/cierran
+    firewalls.forEach(f => {
+        f.timer++;
+        if(f.timer >= f.ciclo){
+            f.timer = 0;
+            f.abierto = !f.abierto;
+        }
+    });
+
+    // Infección
+    zonasInfeccion.forEach(z => {
+        z.pulso++;
+        if(invencible===0 && colision(jugador,z)){
+            if(z.pulso % 40 === 0) danio(1);
+        }
+    });
+}
+
+function danio(n){
+    anim.hurtTimer = 40;
+    anim.estado = "hurt";
+    anim.frame = 0;
+    // FIREWALL: escudo bloquea 1 golpe
+    if(escudoActivo){
+        escudoActivo = false;
+        invencible = DUR_INV_ESCUDO;
+        spawnCirculoDanio(jugador.x, jugador.y, jugador.w, jugador.h);
+        if(!modoPelea){ jugador.x = 50; jugador.y = 50; }
+        else {
+            jugador.x = Math.max(20, Math.min(jugador.x - facing.x*40, canvas.width-jugador.w-20));
+            jugador.y = Math.max(20, Math.min(jugador.y - facing.y*40, canvas.height-jugador.h-20));
+        }
+        teclas = {};
+        actualizarHabHUD();
+        return;
+    }
+    vidas -= n;
+    document.getElementById("vidas").innerHTML = vidas;
+    spawnCirculoDanio(jugador.x, jugador.y, jugador.w, jugador.h);
+    tono(220, 0.08, "sawtooth", 0.06);
+    if(modoPelea){
+        // En pelea: knockback, no reinicio al spawn
+        jugador.x = Math.max(20, Math.min(jugador.x - facing.x*55, canvas.width-jugador.w-20));
+        jugador.y = Math.max(20, Math.min(jugador.y - facing.y*55, canvas.height-jugador.h-20));
+    } else {
+        jugador.x = 50; jugador.y = 50;
+    }
+    invencible = (personaje && personaje.id === "guard") ? DUR_INV_GUARD : DUR_INV_DANO;
+    teclas = {};
+    if(vidas <= 0){
+        spawnDesvanecer(jugador.x, jugador.y, jugador.w, jugador.h);
+        jugadorDesvanecido = true;
+        jugando = false;
+        teclas = {};
+        let frames = 0;
+        (function muerteLoop(){
+            frames++;
+            dibujar();
+            if(frames < 38) requestAnimationFrame(muerteLoop);
+            else perder();
+        })();
+    }
+}
+
+function actualizar(){
+    if(invencible > 0) invencible--;
+    actualizarMecanicas();
+
+    enemigos.forEach(e => {
+        if(invencible > 0) return;
+        let hit = e.jefe
+            ? { x:e.x+e.w*0.2, y:e.y+e.h*0.15, w:e.w*0.6, h:e.h*0.55 }
+            : e;
+        if(colision(jugador, hit)) danio(1);
+    });
+
+    llavesMapa.forEach(l => {
+        if(l.activa && colision(jugador,{x:l.x,y:l.y,w:l.w,h:l.h})){
+            l.activa = false;
+            llaves++;
+            puntos += 100;
+            if(personaje && personaje.id === "byte") puntos += 50; // BYTE bonus
+            document.getElementById("llaves").innerHTML = llaves + " / " + llavesNecesarias;
+            document.getElementById("puntos").innerHTML = puntos;
+            sonidoMoneda();
+
+            // Código Fantasma: al tener todas las llaves se revela el código
+            if(niveles[nivelActual-1].tema === "fantasma" && llaves >= llavesNecesarias && !codigoDesbloqueado){
+                codigoDesbloqueado = true;
+                abrirPanelCodigo();
+            }
+        }
+    });
+
+    let puedeSalir = llaves >= llavesNecesarias;
+    if(niveles[nivelActual-1].tema === "fantasma"){
+        puedeSalir = puedeSalir && codigoIngresado;
+    }
+    if(modoPelea){
+        puedeSalir = puedeSalir && jefeDerrotado;
+    }
+
+    if(puedeSalir && colision(jugador, puerta)){
+        ganar();
+    }
+
+    // Aviso pelea: solo abajo, sin repetir lo del bossHUD
+    if(modoPelea){
+        let aviso = document.getElementById("avisoCodigo");
+        if(!jefeDerrotado){
+            aviso.style.display = "none";
+        } else if(llaves < llavesNecesarias){
+            aviso.style.display = "block";
+            aviso.style.color = "#00ff88";
+            aviso.innerHTML = "✔ Jefe caído — recoge las llaves restantes";
+        } else {
+            aviso.style.display = "block";
+            aviso.style.color = "#00ff88";
+            aviso.innerHTML = "✔ ¡Victoria! Corre a la puerta EXIT";
+        }
+    }
+
+    // Aviso cerca de la puerta fantasma sin código
+    if(niveles[nivelActual-1].tema === "fantasma" && llaves >= llavesNecesarias && !codigoIngresado){
+        let aviso = document.getElementById("avisoCodigo");
+        aviso.style.display = "block";
+        aviso.innerHTML = codigoDesbloqueado
+            ? "Código revelado: pulsa aquí o ve a la puerta → escribe el código"
+            : "Recoge todas las llaves para revelar el código fantasma";
+        if(codigoDesbloqueado && colision(jugador, {x:puerta.x-30,y:puerta.y-30,w:puerta.w+60,h:puerta.h+60})){
+            abrirPanelCodigo();
+        }
+    }
+}
+
+function abrirPanelCodigo(){
+    if(panelCodigoAbierto || codigoIngresado) return;
+    panelCodigoAbierto = true;
+    jugando = false;
+    teclas = {};
+    document.getElementById("mobileControls").classList.remove("active");
+    setControlesMovil(false);
+    mostrarPanelHacker(false);
+    document.getElementById("codigoMostrado").innerHTML = codigoSecreto;
+    // BYTE: pista con primera letra
+    if(personaje && personaje.id === "byte"){
+        document.getElementById("codigoError").innerHTML =
+            "Pista BYTE: empieza con <b>" + codigoSecreto[0] + "</b> _ _ _";
+        document.getElementById("codigoError").style.color = "#33ff66";
+    } else {
+        document.getElementById("codigoError").innerHTML = "";
+        document.getElementById("codigoError").style.color = "#ff5555";
+    }
+    document.getElementById("codigoInput").value = "";
+    document.getElementById("panelCodigo").style.display = "flex";
+    setTimeout(() => document.getElementById("codigoInput").focus(), 50);
+}
+
+function verificarCodigo(){
+    let val = document.getElementById("codigoInput").value.trim().toUpperCase();
+    if(val === codigoSecreto){
+        codigoIngresado = true;
+        panelCodigoAbierto = false;
+        document.getElementById("panelCodigo").style.display = "none";
+        setControlesMovil(true);
+        document.getElementById("avisoCodigo").innerHTML = "✔ Código correcto — la puerta está abierta";
+        document.getElementById("avisoCodigo").style.color = "#00ff88";
+        puntos += 200;
+        document.getElementById("puntos").innerHTML = puntos;
+        sonidoClick();
+        jugando = true;
+        loop();
+    } else {
+        document.getElementById("codigoError").innerHTML = "Código incorrecto. Intenta de nuevo.";
+    }
+}
+
+function decoSueloCuadros(rgba){
+    for(let gy=48; gy<580; gy+=48){
+        for(let gx=0; gx<1000; gx+=48){
+            if(((gx+gy)/48)%2===0){
+                ctx.fillStyle = rgba;
+                ctx.fillRect(gx, gy, 48, 48);
+            }
+        }
+    }
+}
+function decoCintaAbajo(cA, cB){
+    for(let i=0;i<25;i++){
+        ctx.fillStyle = i%2===0 ? cA : cB;
+        ctx.fillRect(i*40, 586, 40, 14);
+    }
+}
+function decoLuces(lista, colOn, colOff){
+    lista.forEach((a,i) => {
+        const on = ((animFrame + i*12) % 40) < 22;
+        ctx.fillStyle = on ? colOn : colOff;
+        ctx.shadowColor = on ? colOn : "transparent";
+        ctx.shadowBlur = on ? 16 : 0;
+        ctx.beginPath(); ctx.arc(a.x, a.y, 7, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        if(on){
+            ctx.strokeStyle = "rgba(255,255,255,0.18)";
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, 15 + Math.sin(animFrame*0.2)*2, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    });
+}
+function decoSello(txt, x, y, rot, color, size){
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.font = "bold " + (size||30) + "px Courier New";
+    ctx.strokeText(txt, 0, 0);
+    ctx.restore();
+}
+
+/** Dibuja fondo temático (rejilla + props). El nivel 3 “restringida” es la referencia de calidad. */
+function dibujarFondo(){
+    ctx.fillStyle = temaActual.bg;
+    ctx.fillRect(0,0,1000,600);
+
+    // Rejilla base tipo terminal (tinte del tema)
+    const gcol = temaActual.glow || "#00ffff";
+    ctx.strokeStyle = gcol.length === 7
+        ? `rgba(${parseInt(gcol.slice(1,3),16)},${parseInt(gcol.slice(3,5),16)},${parseInt(gcol.slice(5,7),16)},0.05)`
+        : "rgba(0,255,200,0.04)";
+    ctx.lineWidth = 1;
+    for(let x=0;x<1000;x+=40){
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,600); ctx.stroke();
+    }
+    for(let y=0;y<600;y+=40){
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(1000,y); ctx.stroke();
+    }
+
+    let t = niveles[nivelActual-1].tema;
+
+    // —— NIVEL 1: Infiltración / Virus ——
+    if(t === "infiltracion"){
+        decoSueloCuadros("rgba(0,255,200,0.03)");
+        decoCintaAbajo("#00ffcc", "#001a18");
+
+        const glyphs = "01<>/\\$#@{}[]ABCEF";
+        ctx.font = "12px Courier New";
+        for(let col=0; col<28; col++){
+            const x = 18 + col * 36;
+            for(let row=0; row<10; row++){
+                const y = ((animFrame * 2 + col * 17 + row * 22) % 640) - 20;
+                if(y < 40) continue;
+                ctx.fillStyle = `rgba(0,255,170,${0.07 + (row%3)*0.05})`;
+                ctx.fillText(glyphs[(col + row + (animFrame>>3)) % glyphs.length], x, y);
+            }
+        }
+
+        // Terminales de acceso
+        [{x:36,y:160},{x:920,y:160},{x:36,y:400},{x:920,y:400},{x:480,y:470}].forEach((tp,i)=>{
+            ctx.fillStyle = "#041820";
+            ctx.fillRect(tp.x, tp.y, 44, 58);
+            ctx.strokeStyle = "#00ffcc";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(tp.x, tp.y, 44, 58);
+            ctx.fillStyle = ((animFrame+i*10)%40)<20 ? "#00ff88" : "#003322";
+            ctx.fillRect(tp.x+8, tp.y+10, 28, 16);
+            ctx.fillStyle = "#66aacc";
+            ctx.font = "8px Courier New";
+            ctx.fillText("TTY", tp.x+10, tp.y+42);
+        });
+
+        // Puertos / sockets en el suelo
+        [{x:160,y:120},{x:360,y:300},{x:620,y:160},{x:860,y:340}].forEach((p,i)=>{
+            ctx.strokeStyle = "#00aa88";
+            ctx.strokeRect(p.x, p.y, 22, 16);
+            ctx.fillStyle = ((animFrame+i*9)%30)<15 ? "#00ffaa" : "#003322";
+            ctx.fillRect(p.x+4, p.y+4, 6, 8);
+            ctx.fillRect(p.x+12, p.y+4, 6, 8);
+        });
+
+        decoLuces(
+            [{x:40,y:50},{x:940,y:50},{x:40,y:540},{x:940,y:540},{x:500,y:70}],
+            "#00ffcc", "#004433"
+        );
+        decoSello("INFILTRATION", 220, 290, -0.2, "#00ffaa", 34);
+        decoSello("VIRUS ZONE", 680, 180, 0.18, "#66ffcc", 26);
+    }
+
+    // —— NIVEL 2: Servidores / Gusano ——
+    if(t === "servidores"){
+        decoSueloCuadros("rgba(40,120,220,0.035)");
+        decoCintaAbajo("#44aaff", "#061018");
+
+        servidores.forEach(s => {
+            // rack con sombra
+            ctx.fillStyle = "#061820";
+            ctx.fillRect(s.x+4, s.y+4, s.w, s.h);
+            ctx.fillStyle = "#0a3048";
+            ctx.fillRect(s.x, s.y, s.w, s.h);
+            ctx.strokeStyle = "#44aaff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(s.x, s.y, s.w, s.h);
+            // rieles
+            ctx.fillStyle = "#1a4060";
+            ctx.fillRect(s.x+2, s.y, 4, s.h);
+            ctx.fillRect(s.x+s.w-6, s.y, 4, s.h);
+            for(let i=0;i<5;i++){
+                ctx.fillStyle = (animFrame+i*10)%40 < 20 ? "#00ff88" : "#004422";
+                ctx.fillRect(s.x+12, s.y+12+i*18, 12, 8);
+                ctx.fillStyle = (animFrame+i*7)%30 < 15 ? "#ffaa00" : "#442200";
+                ctx.fillRect(s.x+30, s.y+12+i*18, 12, 8);
+                ctx.fillStyle = "#2288cc";
+                ctx.fillRect(s.x+48, s.y+12+i*18, 10, 8);
+            }
+            ctx.fillStyle = "rgba(68,170,255,0.12)";
+            ctx.beginPath();
+            ctx.arc(s.x+s.w/2, s.y+s.h/2, 52+Math.sin(animFrame*0.1)*4, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // Paquetes de red viajando
+        for(let i=0;i<8;i++){
+            const px = (animFrame*3 + i*130) % 1040 - 20;
+            const py = 80 + (i%4)*120;
+            ctx.fillStyle = "rgba(68,170,255,0.4)";
+            ctx.fillRect(px, py, 16, 5);
+            ctx.fillStyle = "rgba(180,220,255,0.7)";
+            ctx.fillRect(px+2, py+1, 6, 3);
+        }
+
+        // Cables en el suelo
+        ctx.strokeStyle = "rgba(40,120,200,0.25)";
+        ctx.lineWidth = 2;
+        [[80,500,300,520],[400,80,600,100],[700,480,900,500]].forEach(c=>{
+            ctx.beginPath();
+            ctx.moveTo(c[0], c[1]);
+            ctx.quadraticCurveTo((c[0]+c[2])/2, c[1]-30, c[2], c[3]);
+            ctx.stroke();
+        });
+
+        // Etiquetas de rack
+        ctx.font = "9px Courier New";
+        ctx.fillStyle = "#88bbdd";
+        [{x:268,y:108,t:"RACK-A"},{x:488,y:68,t:"RACK-B"},{x:708,y:138,t:"RACK-C"}].forEach(e=>{
+            ctx.fillText(e.t, e.x, e.y);
+        });
+
+        decoLuces(
+            [{x:50,y:80},{x:950,y:80},{x:50,y:520},{x:950,y:520},{x:500,y:60}],
+            "#33ffaa", "#114433"
+        );
+        decoSello("SERVER FARM", 340, 310, -0.12, "#44aaff", 32);
+        decoSello("WORM TRAFFIC", 650, 220, 0.2, "#88ccff", 24);
+    }
+
+    if(t === "restringida"){
+        // Suelo con paneles de seguridad
+        for(let gy=48; gy<580; gy+=48){
+            for(let gx=0; gx<1000; gx+=48){
+                if(((gx+gy)/48)%2===0){
+                    ctx.fillStyle = "rgba(255,60,40,0.03)";
+                    ctx.fillRect(gx, gy, 48, 48);
+                }
+            }
+        }
+
+        // Cinta de peligro solo abajo (no tapa el banner)
+        for(let i=0;i<25;i++){
+            ctx.fillStyle = i%2===0 ? "#ffcc00" : "#1a1200";
+            ctx.fillRect(i*40, 586, 40, 14);
+        }
+
+        // Luces de alerta en esquinas
+        const alertas = [
+            {x:40,y:50},{x:940,y:50},{x:40,y:540},{x:940,y:540},
+            {x:480,y:70},{x:480,y:520}
+        ];
+        alertas.forEach((a,i) => {
+            const on = ((animFrame + i*12) % 40) < 22;
+            ctx.fillStyle = on ? "#ff2200" : "#440000";
+            ctx.shadowColor = on ? "#ff3300" : "transparent";
+            ctx.shadowBlur = on ? 18 : 0;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, 7, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            if(on){
+                ctx.strokeStyle = "rgba(255,50,30,0.25)";
+                ctx.beginPath();
+                ctx.arc(a.x, a.y, 16 + Math.sin(animFrame*0.2)*2, 0, Math.PI*2);
+                ctx.stroke();
+            }
+        });
+
+        // Cámaras de seguridad
+        const cams = [
+            {x:150,y:55,dir:1},{x:500,y:55,dir:-1},{x:840,y:55,dir:1},
+            {x:300,y:540,dir:1},{x:680,y:540,dir:-1}
+        ];
+        cams.forEach((c,i) => {
+            const swing = Math.sin(animFrame*0.04 + i)*0.45;
+            ctx.fillStyle = "#1a2430";
+            ctx.fillRect(c.x-10, c.y-6, 20, 12);
+            ctx.fillStyle = "#ff3344";
+            ctx.beginPath();
+            ctx.arc(c.x + Math.cos(swing)*4*c.dir, c.y, 3.5, 0, Math.PI*2);
+            ctx.fill();
+            // cono de visión
+            ctx.fillStyle = "rgba(255,60,40,0.06)";
+            ctx.beginPath();
+            ctx.moveTo(c.x, c.y+4);
+            ctx.lineTo(c.x + c.dir*70, c.y + 55);
+            ctx.lineTo(c.x + c.dir*20, c.y + 55);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // Lectores biométricos en zonas abiertas (decoración)
+        const readers = [
+            {x:220,y:140},{x:430,y:150},{x:640,y:420},{x:830,y:220}
+        ];
+        readers.forEach((r,i) => {
+            ctx.fillStyle = "#15202c";
+            ctx.fillRect(r.x, r.y, 28, 36);
+            ctx.strokeStyle = "#ff6644";
+            ctx.strokeRect(r.x, r.y, 28, 36);
+            ctx.fillStyle = ((animFrame+i*15)%50)<25 ? "#33ff88" : "#114422";
+            ctx.fillRect(r.x+6, r.y+8, 16, 10);
+            ctx.fillStyle = "#8899aa";
+            ctx.font = "7px Courier New";
+            ctx.fillText("ID", r.x+8, r.y+30);
+        });
+
+        // Sellos semi-transparentes
+        ctx.save();
+        ctx.globalAlpha = 0.1;
+        ctx.translate(280, 280);
+        ctx.rotate(-0.25);
+        ctx.strokeStyle = "#ff4422";
+        ctx.lineWidth = 4;
+        ctx.font = "bold 36px Courier New";
+        ctx.strokeText("RESTRICTED", -90, 0);
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        ctx.translate(720, 200);
+        ctx.rotate(0.2);
+        ctx.strokeStyle = "#ffaa33";
+        ctx.lineWidth = 3;
+        ctx.font = "bold 26px Courier New";
+        ctx.strokeText("TROYANO ZONE", -80, 0);
+        ctx.restore();
+
+        // Láseres con emisores
+        lasers.forEach(l => {
+            const horiz = (l.eje === "h") || l.w > l.h;
+            // Emisores
+            ctx.fillStyle = "#331108";
+            ctx.strokeStyle = "#ff5533";
+            ctx.lineWidth = 2;
+            if(horiz){
+                ctx.fillRect(l.x-8, l.y-6, 10, 18);
+                ctx.strokeRect(l.x-8, l.y-6, 10, 18);
+                ctx.fillRect(l.x+l.w-2, l.y-6, 10, 18);
+                ctx.strokeRect(l.x+l.w-2, l.y-6, 10, 18);
+            } else {
+                ctx.fillRect(l.x-6, l.y-8, 18, 10);
+                ctx.strokeRect(l.x-6, l.y-8, 18, 10);
+                ctx.fillRect(l.x-6, l.y+l.h-2, 18, 10);
+                ctx.strokeRect(l.x-6, l.y+l.h-2, 18, 10);
+            }
+
+            if(!l.on){
+                // haz apagado: guía punteada
+                ctx.strokeStyle = "rgba(255,80,40,0.25)";
+                ctx.setLineDash([4,6]);
+                ctx.beginPath();
+                if(horiz){
+                    ctx.moveTo(l.x, l.y+l.h/2);
+                    ctx.lineTo(l.x+l.w, l.y+l.h/2);
+                } else {
+                    ctx.moveTo(l.x+l.w/2, l.y);
+                    ctx.lineTo(l.x+l.w/2, l.y+l.h);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                return;
+            }
+
+            // Glow exterior
+            ctx.shadowColor = "#ff2200";
+            ctx.shadowBlur = 18;
+            const pulse = 0.55 + Math.sin(animFrame*0.25 + l.x)*0.25;
+            ctx.fillStyle = `rgba(255,30,20,${pulse})`;
+            ctx.fillRect(l.x, l.y, l.w, l.h);
+            // Núcleo brillante
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = "#ffe0cc";
+            if(horiz){
+                ctx.fillRect(l.x, l.y+1, l.w, Math.max(2, l.h-2));
+            } else {
+                ctx.fillRect(l.x+1, l.y, Math.max(2, l.w-2), l.h);
+            }
+            ctx.shadowBlur = 0;
+
+            // Partículas en el haz
+            for(let p=0;p<3;p++){
+                const tpos = ((animFrame*4 + p*40 + l.x) % 100) / 100;
+                ctx.fillStyle = "rgba(255,255,200,0.8)";
+                if(horiz) ctx.fillRect(l.x + tpos*l.w, l.y, 3, l.h);
+                else ctx.fillRect(l.x, l.y + tpos*l.h, l.w, 3);
+            }
+        });
+    }
+
+    // —— NIVEL 4: Firewall / Ransomware ——
+    if(t === "firewall"){
+        decoSueloCuadros("rgba(255,100,0,0.035)");
+        decoCintaAbajo("#ff8800", "#1a0800");
+
+        // Malla hexagonal de escudo
+        ctx.strokeStyle = "rgba(255,120,0,0.14)";
+        ctx.lineWidth = 1.5;
+        for(let i=0;i<10;i++){
+            const hx = 50 + i*100, hy = 90 + (i%2)*160;
+            ctx.beginPath();
+            for(let a=0;a<6;a++){
+                const ang = Math.PI/3*a - Math.PI/6;
+                const px = hx + Math.cos(ang)*26, py = hy + Math.sin(ang)*26;
+                if(a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+            }
+            ctx.closePath(); ctx.stroke();
+        }
+
+        // Emisores de barrera + puertas firewall
+        firewalls.forEach(f => {
+            const horiz = f.w > f.h;
+            ctx.fillStyle = "#3a1800";
+            ctx.strokeStyle = "#ff8800";
+            ctx.lineWidth = 2;
+            if(horiz){
+                ctx.fillRect(f.x-10, f.y-8, 12, 24);
+                ctx.strokeRect(f.x-10, f.y-8, 12, 24);
+                ctx.fillRect(f.x+f.w-2, f.y-8, 12, 24);
+                ctx.strokeRect(f.x+f.w-2, f.y-8, 12, 24);
+            } else {
+                ctx.fillRect(f.x-8, f.y-10, 24, 12);
+                ctx.strokeRect(f.x-8, f.y-10, 24, 12);
+                ctx.fillRect(f.x-8, f.y+f.h-2, 24, 12);
+                ctx.strokeRect(f.x-8, f.y+f.h-2, 24, 12);
+            }
+            if(f.abierto){
+                ctx.strokeStyle = "rgba(255,180,0,0.45)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6,6]);
+                ctx.strokeRect(f.x, f.y, f.w, f.h);
+                ctx.setLineDash([]);
+                ctx.fillStyle = "rgba(255,200,0,0.08)";
+                ctx.fillRect(f.x, f.y, f.w, f.h);
+            } else {
+                let grad = ctx.createLinearGradient(f.x,f.y,f.x+f.w,f.y+f.h);
+                grad.addColorStop(0,"#ff2200");
+                grad.addColorStop(0.5,"#ffaa00");
+                grad.addColorStop(1,"#ff2200");
+                ctx.fillStyle = grad;
+                ctx.shadowColor = "#ff6600";
+                ctx.shadowBlur = 18;
+                ctx.fillRect(f.x, f.y, f.w, f.h);
+                ctx.shadowBlur = 0;
+                // partículas de calor
+                for(let p=0;p<3;p++){
+                    const tt = ((animFrame*3 + p*30) % 100) / 100;
+                    ctx.fillStyle = "rgba(255,255,180,0.7)";
+                    if(horiz) ctx.fillRect(f.x + tt*f.w, f.y, 3, f.h);
+                    else ctx.fillRect(f.x, f.y + tt*f.h, f.w, 3);
+                }
+            }
+        });
+
+        // Candados / cadenas decorativas
+        [{x:140,y:120},{x:560,y:450},{x:860,y:200}].forEach((c,i)=>{
+            ctx.strokeStyle = "#ffaa44";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(c.x, c.y, 18, 14);
+            ctx.beginPath();
+            ctx.arc(c.x+9, c.y, 7, Math.PI, 0);
+            ctx.stroke();
+            ctx.fillStyle = ((animFrame+i*12)%40)<20 ? "#ffcc66" : "#663300";
+            ctx.fillRect(c.x+6, c.y+4, 6, 6);
+        });
+
+        decoLuces(
+            [{x:60,y:60},{x:940,y:60},{x:60,y:540},{x:940,y:540},{x:500,y:70}],
+            "#ff8800", "#442200"
+        );
+        decoSello("FIREWALL LAYER", 300, 300, -0.15, "#ff8800", 30);
+        decoSello("RANSOMWARE", 640, 200, 0.22, "#ffaa44", 24);
+    }
+
+    // —— NIVEL 5: Núcleo / Spyware ——
+    if(t === "nucleo" && nucleo){
+        decoSueloCuadros("rgba(140,80,220,0.04)");
+        decoCintaAbajo("#aa66ff", "#100818");
+
+        let pulso = Math.sin(animFrame*0.08)*6;
+        let cx = nucleo.x+nucleo.r, cy = nucleo.y+nucleo.r;
+
+        // Anillos de datos alrededor del núcleo
+        for(let r=70;r<=130;r+=30){
+            ctx.strokeStyle = `rgba(170,100,255,${0.12 + Math.sin(animFrame*0.05+r)*0.05})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(cx, cy, r + pulso*0.3, 0, Math.PI*2); ctx.stroke();
+        }
+
+        conexionesNN.forEach(con => {
+            ctx.strokeStyle = "rgba(140,100,220,0.3)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(con.a.x, con.a.y);
+            ctx.lineTo(con.b.x, con.b.y);
+            ctx.stroke();
+        });
+
+        impulsosNN.forEach(imp => {
+            imp.t += imp.vel;
+            if(imp.t > 1) imp.t = 0;
+            let x = imp.c.a.x + (imp.c.b.x - imp.c.a.x) * imp.t;
+            let y = imp.c.a.y + (imp.c.b.y - imp.c.a.y) * imp.t;
+            ctx.fillStyle = "#ffe066";
+            ctx.shadowColor = "#ffcc44";
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(x, y, 3.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        nodosIA.forEach((n, i) => {
+            let act = 0.5 + 0.5 * Math.sin(animFrame*0.1 + i);
+            let col = n.capa === 0 ? "#66ccff" : (n.capa === 1 ? "#cc88ff" : "#88ffaa");
+            ctx.fillStyle = col;
+            ctx.globalAlpha = 0.55 + act*0.45;
+            ctx.shadowColor = col;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 9 + act*3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = "rgba(255,255,255,0.35)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 9 + act*3, 0, Math.PI*2);
+            ctx.stroke();
+        });
+
+        let g = ctx.createRadialGradient(cx,cy,8,cx,cy,nucleo.r+pulso);
+        g.addColorStop(0,"#ffffff");
+        g.addColorStop(0.35,"#bb77ff");
+        g.addColorStop(1,"rgba(60,0,100,0.15)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(cx,cy,nucleo.r+pulso,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "rgba(200,160,255,0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx,cy,nucleo.r+pulso,0,Math.PI*2); ctx.stroke();
+
+        ctx.fillStyle = "#f0e0ff";
+        ctx.font = "bold 12px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("CAPA", cx, cy-4);
+        ctx.fillText("PROFUNDA", cx, cy+12);
+        ctx.textAlign = "left";
+
+        // Etiquetas de capas con cajas
+        [{x:40,y:55,t:"ENTRADA",c:"#66ccff"},{x:250,y:55,t:"OCULTA",c:"#cc88ff"},
+         {x:650,y:55,t:"OCULTA",c:"#cc88ff"},{x:860,y:55,t:"SALIDA",c:"#88ffaa"}].forEach(e=>{
+            ctx.fillStyle = "rgba(20,0,40,0.6)";
+            ctx.fillRect(e.x, e.y-12, 70, 18);
+            ctx.strokeStyle = e.c;
+            ctx.strokeRect(e.x, e.y-12, 70, 18);
+            ctx.fillStyle = e.c;
+            ctx.font = "bold 10px Courier New";
+            ctx.fillText(e.t, e.x+8, e.y);
+        });
+
+        decoLuces(
+            [{x:40,y:540},{x:940,y:540},{x:40,y:100},{x:940,y:100}],
+            "#cc88ff", "#220044"
+        );
+        decoSello("NEURAL NET", 200, 320, -0.18, "#aa66ff", 30);
+        decoSello("SPYWARE", 720, 160, 0.2, "#dd99ff", 24);
+    }
+
+    // —— NIVEL 6: Red oscura / Adware ——
+    if(t === "oscura"){
+        decoSueloCuadros("rgba(100,60,180,0.04)");
+        decoCintaAbajo("#8855cc", "#0a0610");
+
+        // Niebla / visibilidad limitada
+        const fog = ctx.createRadialGradient(500,300,40,500,300,420);
+        fog.addColorStop(0,"rgba(0,0,0,0)");
+        fog.addColorStop(1,"rgba(0,0,0,0.45)");
+        ctx.fillStyle = fog;
+        ctx.fillRect(0,40,1000,560);
+
+        // Pop-ups adware
+        const ads = [
+            {x:50,y:70,w:130,h:52,txt:"¡CLICK YA!"},
+            {x:780,y:90,w:150,h:55,txt:"FREE $$$"},
+            {x:380,y:470,w:140,h:50,txt:"INSTALL NOW"},
+            {x:200,y:300,w:110,h:42,txt:"WIN PRIZE"},
+            {x:620,y:200,w:120,h:46,txt:"UPDATE*"}
+        ];
+        ads.forEach((a,i) => {
+            const bob = Math.sin(animFrame*0.08 + i)*4;
+            ctx.fillStyle = "rgba(40,20,70,0.75)";
+            ctx.fillRect(a.x, a.y+bob, a.w, a.h);
+            ctx.strokeStyle = ((animFrame+i*8)%40)<20 ? "#ff88ff" : "#8866cc";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(a.x, a.y+bob, a.w, a.h);
+            // barra título fake
+            ctx.fillStyle = "#552288";
+            ctx.fillRect(a.x, a.y+bob, a.w, 14);
+            ctx.fillStyle = "#ff6666";
+            ctx.fillRect(a.x+a.w-12, a.y+bob+2, 8, 8);
+            ctx.fillStyle = "#eeccff";
+            ctx.font = "bold 12px Courier New";
+            ctx.fillText(a.txt, a.x+10, a.y+bob+34);
+        });
+
+        // Ojos vigilantes
+        [{x:160,y:160},{x:840,y:360},{x:500,y:120}].forEach((o,i)=>{
+            const blink = ((animFrame+i*20)%80) > 6;
+            ctx.fillStyle = "#221133";
+            ctx.beginPath(); ctx.ellipse(o.x, o.y, 16, 10, 0, 0, Math.PI*2); ctx.fill();
+            if(blink){
+                ctx.fillStyle = "#cc88ff";
+                ctx.beginPath(); ctx.arc(o.x + Math.sin(animFrame*0.05+i)*3, o.y, 4, 0, Math.PI*2); ctx.fill();
+            }
+        });
+
+        decoLuces(
+            [{x:40,y:50},{x:940,y:50},{x:40,y:540},{x:940,y:540}],
+            "#aa66ff", "#220044"
+        );
+        decoSello("DARK WEB", 280, 280, -0.22, "#9966dd", 32);
+        decoSello("ADWARE", 700, 400, 0.15, "#cc99ff", 26);
+    }
+
+    // —— NIVEL 7: Fantasma / Rootkit ——
+    if(t === "fantasma"){
+        decoSueloCuadros("rgba(80,255,200,0.03)");
+        decoCintaAbajo("#66ffaa", "#061410");
+
+        // Nubes fantasma
+        for(let i=0;i<10;i++){
+            let gx = (animFrame*2 + i*110) % 1100 - 50;
+            let gy = 70 + Math.sin(animFrame*0.05+i)*36 + (i%5)*70;
+            ctx.fillStyle = `rgba(100,255,200,${0.06 + (i%3)*0.02})`;
+            ctx.beginPath(); ctx.arc(gx, gy, 18 + (i%3)*4, 0, Math.PI*2); ctx.fill();
+        }
+
+        // Fragmentos de código
+        ctx.font = "11px Courier New";
+        const codes = ["0xDEAD","null","ghost()","rootkit","hidden","unmap()","shadow"];
+        for(let i=0;i<7;i++){
+            ctx.fillStyle = `rgba(136,255,204,${0.14 + (i%2)*0.1})`;
+            ctx.fillText(codes[i], 80+i*130, 90 + ((animFrame*0.8+i*50)%420));
+        }
+
+        // Terminales fantasma / huellas
+        [{x:150,y:140},{x:520,y:200},{x:780,y:420},{x:300,y:460}].forEach((p,i)=>{
+            ctx.globalAlpha = 0.35 + 0.2*Math.sin(animFrame*0.1+i);
+            ctx.strokeStyle = "#88ffcc";
+            ctx.strokeRect(p.x, p.y, 36, 28);
+            ctx.fillStyle = "#204040";
+            ctx.fillRect(p.x, p.y, 36, 28);
+            ctx.fillStyle = "#88ffcc";
+            ctx.font = "8px Courier New";
+            ctx.fillText("???", p.x+8, p.y+18);
+            ctx.globalAlpha = 1;
+        });
+
+        // Candados rotos
+        [{x:240,y:80},{x:700,y:500}].forEach((c,i)=>{
+            ctx.strokeStyle = "#66ccaa";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(c.x, c.y, 16, 12);
+            ctx.beginPath();
+            ctx.arc(c.x+8, c.y - 2 + Math.sin(animFrame*0.1+i)*2, 6, Math.PI*1.1, -0.2);
+            ctx.stroke();
+        });
+
+        decoLuces(
+            [{x:40,y:50},{x:940,y:50},{x:40,y:540},{x:940,y:540},{x:500,y:520}],
+            "#66ffaa", "#0a3322"
+        );
+        decoSello("GHOST CODE", 260, 300, -0.2, "#88ffcc", 32);
+        decoSello("ROOTKIT", 680, 180, 0.18, "#aaffee", 26);
+    }
+
+    // —— NIVELES 8-10: Arenas de jefe ——
+    if(t === "virus" || t === "brote" || t === "supremo"){
+        const colA = t==="virus" ? "rgba(255,50,180,0.04)" : "rgba(255,30,30,0.045)";
+        decoSueloCuadros(colA);
+        decoCintaAbajo(
+            t==="virus" ? "#ff44aa" : "#ff2222",
+            t==="virus" ? "#180010" : "#120000"
+        );
+
+        zonasInfeccion.forEach(z => {
+            z.pulso = (z.pulso||0) + 1;
+            let a = 0.12 + Math.sin(z.pulso*0.1)*0.08;
+            const col = t==="virus" ? `rgba(255,50,180,${a})` : `rgba(255,20,20,${a})`;
+            ctx.fillStyle = col;
+            ctx.fillRect(z.x, z.y, z.w, z.h);
+            ctx.strokeStyle = t==="virus" ? "#ff44aa" : "#ff2222";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(z.x, z.y, z.w, z.h);
+            // pulso exterior
+            ctx.strokeStyle = t==="virus" ? "rgba(255,80,200,0.25)" : "rgba(255,40,40,0.25)";
+            ctx.strokeRect(z.x-4, z.y-4, z.w+8, z.h+8);
+        });
+
+        // Glitch scanlines
+        ctx.fillStyle = t==="supremo" ? "rgba(255,0,0,0.07)" : "rgba(255,40,120,0.05)";
+        for(let y=40;y<600;y+=16){
+            if(((animFrame>>1)+y)%32 < 7) ctx.fillRect(0, y, 1000, 3);
+        }
+
+        // Pilares / terminales de amenaza
+        const pillars = t==="supremo"
+            ? [{x:100,y:200},{x:860,y:200},{x:100,y:400},{x:860,y:400},{x:480,y:140}]
+            : [{x:120,y:180},{x:850,y:180},{x:120,y:400},{x:850,y:400}];
+        pillars.forEach((p,i)=>{
+            ctx.fillStyle = t==="virus" ? "#201028" : "#280808";
+            ctx.fillRect(p.x, p.y, 28, 48);
+            ctx.strokeStyle = t==="virus" ? "#ff66cc" : "#ff3333";
+            ctx.strokeRect(p.x, p.y, 28, 48);
+            ctx.fillStyle = ((animFrame+i*10)%30)<15
+                ? (t==="virus" ? "#ff66aa" : "#ff4444")
+                : "#330010";
+            ctx.fillRect(p.x+6, p.y+10, 16, 10);
+        });
+
+        decoLuces(
+            [{x:40,y:50},{x:940,y:50},{x:40,y:540},{x:940,y:540},{x:500,y:70}],
+            t==="virus" ? "#ff44aa" : "#ff2222",
+            t==="virus" ? "#330022" : "#330000"
+        );
+
+        if(t === "virus"){
+            decoSello("FILELESS BOSS", 300, 300, -0.15, "#ff44aa", 30);
+            decoSello("NO HOST FILE", 640, 200, 0.2, "#ff88cc", 22);
+        } else if(t === "brote"){
+            decoSello("BOTNET OUTBREAK", 280, 300, -0.18, "#ff3333", 28);
+            decoSello("SWARM ACTIVE", 660, 180, 0.18, "#ff6666", 22);
+            // nodos botnet
+            for(let i=0;i<6;i++){
+                const bx = 150 + i*140;
+                const by = 100 + Math.sin(animFrame*0.08+i)*20;
+                ctx.strokeStyle = "rgba(255,60,60,0.3)";
+                ctx.beginPath(); ctx.moveTo(500,300); ctx.lineTo(bx, by); ctx.stroke();
+                ctx.fillStyle = ((animFrame+i*8)%24)<12 ? "#ff4444" : "#441111";
+                ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
+            }
+        } else {
+            decoSello("LOGIC BOMB", 300, 300, -0.12, "#ff0000", 32);
+            decoSello("DETONATION", 640, 200, 0.22, "#ff4444", 24);
+            // contador decorativo
+            ctx.fillStyle = "rgba(40,0,0,0.7)";
+            ctx.fillRect(420, 520, 160, 36);
+            ctx.strokeStyle = "#ff2222";
+            ctx.strokeRect(420, 520, 160, 36);
+            ctx.fillStyle = "#ff5555";
+            ctx.font = "bold 16px Courier New";
+            const dig = String(99 - ((animFrame>>3)%90)).padStart(2,"0");
+            ctx.fillText("T-" + dig + ".00", 450, 544);
+        }
+    }
+}
+
+function dibujarBannerNivel(){
+    if(!niveles[nivelActual-1] || !temaActual) return;
+    // En peleas de jefe el HUD HTML ya muestra la info — no dibujar banner encima
+    if(modoPelea) return;
+    const t = niveles[nivelActual-1].tema;
+    if(t === "virus" || t === "brote" || t === "supremo") return;
+    const banners = {
+        infiltracion: { txt:">> INFILTRACIÓN EN CURSO...", color:"#00ffff" },
+        servidores:   { txt:">> SERVIDORES BLINDADOS — PAQUETES EN RUTA", color:"#44aaff" },
+        restringida:  { txt:"⚠ ZONA RESTRINGIDA — LÁSERES ACTIVOS · TROYANO", color:"#ff5533" },
+        firewall:     { txt:"🔥 FIREWALL ACTIVO — ESPERA LA APERTURA", color:"#ff8800" },
+        nucleo:       { txt:"◈ RED NEURONAL — EVITA LA CAPA PROFUNDA", color:"#d0b0ff" },
+        oscura:       { txt:"☁ RED OSCURA — VISIBILIDAD LIMITADA", color:"#aa88ff" },
+        fantasma:     { txt:"👻 CÓDIGO FANTASMA — RECOGE LLAVES PARA REVELAR EL CÓDIGO", color:"#88ffcc" }
+    };
+    const b = banners[t];
+    if(!b) return;
+
+    // Franja superior opaca: las letras nunca quedan tapadas
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(0,0,0,0.82)";
+    ctx.fillRect(0, 0, 1000, 36);
+    ctx.fillStyle = temaActual.glow || b.color;
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(0, 34, 1000, 2);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = b.color;
+    ctx.font = "bold 14px Courier New";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b.txt, 16, 18);
+    ctx.restore();
+}
+
+function dibujarMalware(e){
+    let key = e.malware || (malwareNivel && malwareNivel.id) || "virus";
+    let img = imgsMalware[key];
+    let bounce = Math.sin(animFrame * 0.12 + (e.x||0)*0.01) * (e.jefe ? 2 : 1);
+
+    // Sin resplandor / glow — cuerpo completo sin recortar
+    ctx.shadowBlur = 0;
+    if(e.fantasma) ctx.globalAlpha = 0.55 + Math.sin(animFrame*0.15)*0.15;
+
+    if(img && img.complete && img.naturalWidth > 0){
+        const scale = e.jefe ? 1.25 : 1.35;
+        let drawH = e.h * scale;
+        let drawW = drawH * (img.naturalWidth / img.naturalHeight);
+        if(drawW > e.w * scale * 1.15){
+            drawW = e.w * scale * 1.15;
+            drawH = drawW * (img.naturalHeight / img.naturalWidth);
+        }
+        const dx = e.x + (e.w - drawW) / 2;
+        const dy = e.y + (e.h - drawH) / 2 + bounce;
+        const prevSmooth = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = true;
+        if(e.jefe && e.flash > 0) ctx.globalAlpha = 0.55 + Math.sin(animFrame)*0.25;
+        ctx.drawImage(img, dx, dy, drawW, drawH);
+        ctx.imageSmoothingEnabled = prevSmooth;
+
+        // Barra de vida sobre el jefe
+        if(e.jefe && e.maxHp){
+            const bw = drawW;
+            const bh = 8;
+            const bx = dx;
+            const by = dy - 14;
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "#330011";
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.fillStyle = e.tema === "supremo" ? "#ff3300" : "#ff5577";
+            ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
+            ctx.strokeStyle = "#ff88aa";
+            ctx.strokeRect(bx, by, bw, bh);
+        }
+        // Carga detonación nivel 10
+        if(e.jefe && e.tema === "supremo"){
+            ctx.strokeStyle = `rgba(255,40,0,${0.35 + (e.carga||0)/200})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(dx + drawW/2, dy + drawH/2, 40 + (e.carga||0)*0.5, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
+    } else {
+        ctx.fillStyle = "#ff3355";
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+    }
+    ctx.globalAlpha = 1;
+}
+
+/** Un frame completo: fondo → muros → llaves → entidades → efectos → banner. */
+function dibujar(){
+    animFrame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    dibujarFondo();
+
+    // Muros con acabado temático (como nivel 3)
+    muros.forEach(m => {
+        const tema = niveles[nivelActual-1] && niveles[nivelActual-1].tema;
+        const glow = (temaActual && temaActual.glow) || "#00ffff";
+        let c0 = "#123", c1 = "#345", c2 = "#112";
+        if(tema === "restringida"){ c0="#1e2836"; c1="#354358"; c2="#1a222e"; }
+        else if(tema === "infiltracion"){ c0="#003344"; c1="#006688"; c2="#002233"; }
+        else if(tema === "servidores"){ c0="#0a2840"; c1="#1a5a88"; c2="#061828"; }
+        else if(tema === "firewall"){ c0="#3a1800"; c1="#884400"; c2="#220e00"; }
+        else if(tema === "nucleo"){ c0="#1a0a30"; c1="#553388"; c2="#100820"; }
+        else if(tema === "oscura"){ c0="#14101c"; c1="#33224a"; c2="#0a0810"; }
+        else if(tema === "fantasma"){ c0="#102830"; c1="#2a6655"; c2="#0a1818"; }
+        else if(tema === "virus"){ c0="#2a1030"; c1="#773355"; c2="#180818"; }
+        else if(tema === "brote" || tema === "supremo"){ c0="#2a0808"; c1="#772222"; c2="#140404"; }
+        else { c0 = temaActual.muro; c1 = temaActual.muro; c2 = temaActual.muro; }
+
+        const g = ctx.createLinearGradient(m.x, m.y, m.x+m.w, m.y+m.h);
+        g.addColorStop(0, c0);
+        g.addColorStop(0.5, c1);
+        g.addColorStop(1, c2);
+        ctx.fillStyle = g;
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 6;
+        ctx.fillRect(m.x, m.y, m.w, m.h);
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = glow;
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(m.x+0.5, m.y+0.5, m.w-1, m.h-1);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(200,220,240,0.45)";
+        const step = 22;
+        if(m.w >= m.h){
+            for(let x=m.x+8; x<m.x+m.w-4; x+=step){
+                ctx.beginPath(); ctx.arc(x, m.y+m.h/2, 2, 0, Math.PI*2); ctx.fill();
+            }
+        } else {
+            for(let y=m.y+8; y<m.y+m.h-4; y+=step){
+                ctx.beginPath(); ctx.arc(m.x+m.w/2, y, 2, 0, Math.PI*2); ctx.fill();
+            }
+        }
+    });
+    ctx.shadowBlur = 0;
+
+    // Llaves
+    llavesMapa.forEach(l => {
+        if(!l.activa) return;
+        ctx.shadowColor = "#ffdd00";
+        ctx.shadowBlur = 12;
+        if(imgLlave.complete && imgLlave.naturalWidth>0){
+            ctx.drawImage(imgLlave, l.x, l.y, l.w, l.h);
+        } else {
+            ctx.fillStyle = "#ffdd00";
+            ctx.fillRect(l.x,l.y,l.w,l.h);
+        }
+    });
+    ctx.shadowBlur = 0;
+
+    // Proyectiles de arma
+    proyectiles.forEach(p => {
+        ctx.fillStyle = p.color || "#00ffff";
+        ctx.shadowColor = p.color || "#00ffff";
+        ctx.shadowBlur = 10;
+        if(p.seeking){
+            ctx.beginPath();
+            ctx.arc(p.x + p.w/2, p.y + p.h/2, p.w/2 + 2, 0, Math.PI*2);
+            ctx.fill();
+        } else {
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+        }
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Courier New";
+        ctx.fillText(p.icon || "•", p.x, p.y + p.h);
+    });
+
+    // Efectos de ataque (melee / haz / boom / desvanecer)
+    for(let i = efectosAtaque.length - 1; i >= 0; i--){
+        let ef = efectosAtaque[i];
+        ef.life--;
+        const col = ef.color || "#00ffcc";
+
+        if(ef.tipo === "desvanecer"){
+            const maxL = ef.maxLife || 40;
+            const t = 1 - ef.life / maxL;
+            const fade = Math.max(0, ef.life / maxL);
+            const r = ef.radio * (0.6 + t * 1.8);
+            // círculo rojo expandiéndose
+            ctx.save();
+            ctx.globalAlpha = fade * 0.9;
+            ctx.strokeStyle = "#ff1a2e";
+            ctx.lineWidth = 3 + (1 - fade) * 3;
+            ctx.shadowColor = "#ff0033";
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.arc(ef.x, ef.y, r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.strokeStyle = "#ff8866";
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(ef.x, ef.y, r * 0.55, 0, Math.PI * 2);
+            ctx.stroke();
+            // núcleo que se desvanece
+            ctx.globalAlpha = fade * 0.35;
+            ctx.fillStyle = "#ff2244";
+            ctx.beginPath();
+            ctx.arc(ef.x, ef.y, Math.max(2, ef.radio * (1 - t)), 0, Math.PI * 2);
+            ctx.fill();
+            // binarios / números alrededor
+            ctx.shadowBlur = 0;
+            (ef.bits || []).forEach(b => {
+                b.dist += b.spd;
+                b.ang += b.rot;
+                const px = ef.x + Math.cos(b.ang) * b.dist;
+                const py = ef.y + Math.sin(b.ang) * b.dist;
+                ctx.globalAlpha = fade * (0.55 + Math.random() * 0.35);
+                ctx.fillStyle = b.ch === "1" || b.ch === "0" ? "#ff4466" : "#ffaa77";
+                ctx.font = "bold " + (b.size || 12) + "px Courier New";
+                ctx.fillText(b.ch, px, py);
+            });
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        } else if(ef.boom){
+            ctx.strokeStyle = col;
+            ctx.globalAlpha = ef.life/20;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(ef.x, ef.y, ef.w, ef.h);
+            ctx.globalAlpha = 1;
+        } else if(ef.estilo === "haz"){
+            ctx.strokeStyle = col;
+            ctx.globalAlpha = ef.life/6;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(ef.x, ef.y);
+            ctx.lineTo(ef.x + ef.fx * ef.reach, ef.y + ef.fy * ef.reach);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 1;
+        } else {
+            ctx.strokeStyle = col;
+            ctx.fillStyle = col;
+            ctx.globalAlpha = 0.25 + ef.life/20;
+            ctx.lineWidth = 2;
+            ctx.fillRect(ef.x, ef.y, ef.w, ef.h);
+            ctx.globalAlpha = 0.9;
+            ctx.strokeRect(ef.x, ef.y, ef.w, ef.h);
+            if(ef.icon){
+                ctx.fillStyle = "#fff";
+                ctx.font = "16px Courier New";
+                ctx.fillText(ef.icon, ef.x + ef.w/2 - 8, ef.y + ef.h/2 + 5);
+            }
+            ctx.globalAlpha = 1;
+        }
+        if(ef.life <= 0) efectosAtaque.splice(i, 1);
+    }
+    ctx.lineWidth = 1;
+
+    // Puerta
+    let puertaLista = llaves >= llavesNecesarias;
+    if(niveles[nivelActual-1].tema === "fantasma") puertaLista = puertaLista && codigoIngresado;
+    if(modoPelea) puertaLista = puertaLista && jefeDerrotado;
+    ctx.fillStyle = puertaLista ? "#00ff66" : "#335533";
+    ctx.shadowColor = puertaLista ? "#00ff66" : "transparent";
+    ctx.shadowBlur = puertaLista ? 20 : 0;
+    ctx.fillRect(puerta.x, puerta.y, puerta.w, puerta.h);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#fff";
+    ctx.font = "10px Courier New";
+    ctx.fillText(puertaLista ? "EXIT" : "LOCK", puerta.x+8, puerta.y+35);
+
+    // Jugador grande y visible
+    if(invencible===0 || Math.floor(invencible/5)%2===0){
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = sombraTimer > 0 ? 0.55 : 1;
+        // sprite ~2x el hitbox para que se vea bien
+        if(!jugadorDesvanecido){
+            dibujarPersonajeSheet(jugador.x - 18, jugador.y - 30, 78, 92);
+        }
+        ctx.globalAlpha = 1;
+        if(escudoActivo){
+            let cx = jugador.x + jugador.w / 2;
+            let cy = jugador.y + jugador.h / 2 - 8;
+            let r = 48;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = "#88aaff";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r - 6, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(150,120,255,0.55)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // SCAN: radar de enemigos cercanos
+    if(personaje && personaje.id === "scan"){
+        enemigos.forEach(e => {
+            let dx=(e.x+e.w/2)-(jugador.x+jugador.w/2);
+            let dy=(e.y+e.h/2)-(jugador.y+jugador.h/2);
+            let d=Math.sqrt(dx*dx+dy*dy);
+            if(d < 300){
+                ctx.strokeStyle = "rgba(68,136,255,0.7)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(jugador.x+jugador.w/2, jugador.y+jugador.h/2);
+                ctx.lineTo(e.x+e.w/2, e.y+e.h/2);
+                ctx.stroke();
+            }
+        });
+    }
+
+    // Enemigos = malware del nivel
+    enemigos.forEach(e => dibujarMalware(e));
+
+    // Red Oscura: niebla (solo ves cerca del jugador)
+    if(niveles[nivelActual-1].tema === "oscura"){
+        let jx = jugador.x + jugador.w/2;
+        let jy = jugador.y + jugador.h/2;
+        let radio = (personaje && personaje.id === "scan") ? 270 : 140;
+        ctx.fillStyle = "rgba(0,0,0,0.88)";
+        ctx.beginPath();
+        ctx.rect(0, 0, 1000, 600);
+        ctx.arc(jx, jy, radio, 0, Math.PI * 2, true);
+        ctx.fill("evenodd");
+
+        // borde suave del círculo de visión
+        let g = ctx.createRadialGradient(jx, jy, radio * 0.7, jx, jy, radio);
+        g.addColorStop(0, "rgba(0,0,0,0)");
+        g.addColorStop(1, "rgba(0,0,0,0.55)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(jx, jy, radio, 0, Math.PI * 2);
+        ctx.fill();
+
+        // banner se dibuja al final (no aquí)
+    }
+    dibujarBannerNivel();
+}
+
+function perder(){
+    jugando = false; teclas = {};
+    detenerHeartbeatJuego();
+    if(tiempoTimer) clearInterval(tiempoTimer);
+    canvas.style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.body.classList.remove("modo-pelea");
+    document.getElementById("mobileControls").classList.remove("active");
+    setControlesMovil(false);
+    document.getElementById("btnAtacar").classList.remove("show");
+    document.getElementById("bossHUD").style.display = "none";
+    mostrarPanelHacker(false);
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("avisoCodigo").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    document.getElementById("gameOver").style.display = "flex";
+}
+
+function ganar(){
+    jugando = false; teclas = {};
+    detenerHeartbeatJuego();
+    guardarRecord(); sonidoClick();
+    puntos += tiempo * 10;
+    document.getElementById("puntos").innerHTML = puntos;
+    registrarProgresoNivel(nivelActual + 1);
+    document.getElementById("avisoCodigo").style.display = "none";
+    document.body.classList.remove("modo-juego");
+    document.body.classList.remove("modo-pelea");
+    document.getElementById("mobileControls").classList.remove("active");
+    setControlesMovil(false);
+    document.getElementById("btnAtacar").classList.remove("show");
+    document.getElementById("bossHUD").style.display = "none";
+    mostrarPanelHacker(false);
+
+    if(nivelActual >= niveles.length){
+        if(tiempoTimer) clearInterval(tiempoTimer);
+        canvas.style.display = "none";
+        document.getElementById("hud").style.display = "none";
+        document.getElementById("nombreNivel").style.display = "none";
+        document.getElementById("habHUD").style.display = "none";
+        document.getElementById("victoria").style.display = "flex";
+        return;
+    }
+
+    canvas.style.display = "none";
+    document.getElementById("hud").style.display = "none";
+    document.getElementById("nombreNivel").style.display = "none";
+    document.getElementById("habHUD").style.display = "none";
+    let sig = niveles[nivelActual];
+    document.getElementById("tituloNivel").innerHTML = "NIVEL " + nivelActual + " COMPLETADO";
+    document.getElementById("textoNivel").innerHTML =
+        niveles[nivelActual-1].nombre + " ✔<br>Siguiente: <b>" + sig.nombre + "</b><br>" +
+        "<span style='font-size:16px;color:#aaa'>" + sig.desc + "</span>" +
+        (sig.pelea ? "<br>⚔ ¡PELEA DE JEFE!" : (sig.scary ? "<br>⚠ ¡ZONA MUY PELIGROSA!" : ""));
+    document.getElementById("nivelCompleto").style.display = "flex";
+}
+
+function siguienteNivel(){
+    document.getElementById("nivelCompleto").style.display = "none";
+    jugando = false;
+    mostrarIntroVirus(nivelActual + 1);
+}
+
+/** Game loop principal (~60 fps con requestAnimationFrame). */
+function loop(){
+    if(!jugando) return;
+    moverJugador();
+    moverEnemigos();
+    moverProyectiles();
+    actualizar();
+    dibujar();
+    if(modoPelea && animFrame % 10 === 0) actualizarBossHUD();
+    requestAnimationFrame(loop);
+}
+
+// ===============================
+// PERFIL / LOGIN (API en la nube + fallback local)
+// ===============================
+// Prioridad API: ?api=URL → localStorage → window.ESCAPE_API_URL → origin/api/escape
+// Si el servidor no responde (ej. Netlify sin backend), usa cuentas en localStorage.
+const PERFIL_KEY = "escapeHackerPerfil";
+const TOKEN_KEY = "escapeHackerToken";
+const CUENTAS_KEY = "escapeHackerCuentasLocal";
+const API_OVERRIDE_KEY = "escapeHackerApiUrl";
+const DEVICE_KEY = "escapeHackerDeviceId";
+function getDeviceId(){
+    try{
+        let id = localStorage.getItem(DEVICE_KEY);
+        if(!id){
+            id = "d_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem(DEVICE_KEY, id);
+        }
+        return id;
+    }catch(_){ return "d_tmp"; }
+}
+function resolverApiEscape(){
+    const CLOUD_API = "https://escape-del-hacker.onrender.com/api/escape";
+    try{
+        const q = new URLSearchParams(location.search).get("api");
+        if(q && /^https?:\/\//i.test(q)){
+            localStorage.setItem(API_OVERRIDE_KEY, q.replace(/\/$/, ""));
+            return q.replace(/\/$/, "");
+        }
+    }catch(_){}
+    const saved = localStorage.getItem(API_OVERRIDE_KEY);
+    if(saved && /^https?:\/\//i.test(saved)) return saved.replace(/\/$/, "");
+    if(typeof window !== "undefined" && window.ESCAPE_API_URL){
+        return String(window.ESCAPE_API_URL).replace(/\/$/, "");
+    }
+    // Local / archivo: servidor de desarrollo
+    const host = (location.hostname || "").toLowerCase();
+    if(host === "localhost" || host === "127.0.0.1" || location.protocol === "file:"){
+        return "http://localhost:3001/api/escape";
+    }
+    // Netlify u otro hosting estático: siempre la API en Render
+    // (si usáramos location.origin/api/escape, el progreso nunca llegaría al admin)
+    if(host.includes("netlify.app") || host.includes("netlify.com") || location.protocol === "https:"){
+        localStorage.setItem(API_OVERRIDE_KEY, CLOUD_API);
+        return CLOUD_API;
+    }
+    return location.origin + "/api/escape";
+}
+const API_ESCAPE = resolverApiEscape();
+let perfilJugador = null;
+let escapeToken = localStorage.getItem(TOKEN_KEY) || null;
+let modoLocalSinServidor = false;
+let playTimePendiente = 0;
+let playHeartbeatTimer = null;
+let ultimoHeartbeatMs = Date.now();
+
+function cargarCuentasLocal(){
+    try{ return JSON.parse(localStorage.getItem(CUENTAS_KEY) || "{}") || {}; }
+    catch(_){ return {}; }
+}
+function guardarCuentasLocal(map){
+    localStorage.setItem(CUENTAS_KEY, JSON.stringify(map || {}));
+}
+function esErrorSinServidor(e){
+    const m = String((e && e.message) || e || "");
+    const st = e && e.status;
+    return st === 404 || st === 502 || st === 503 ||
+        /404|502|503|Sin conexión|Failed to fetch|NetworkError|Load failed/i.test(m);
+}
+
+async function apiEscape(path, body, method){
+    const opts = {
+        method: method || (body ? "POST" : "GET"),
+        headers: { "Content-Type": "application/json" }
+    };
+    if(escapeToken && !String(escapeToken).startsWith("local:")){
+        opts.headers.Authorization = "Bearer " + escapeToken;
+    }
+    if(body) opts.body = JSON.stringify(body);
+    let res;
+    try{
+        res = await fetch(API_ESCAPE + path, opts);
+    }catch(_){
+        const err = new Error("Sin conexión al servidor");
+        err.status = 0;
+        throw err;
+    }
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok){
+        const err = new Error(data.error || ("Error " + res.status));
+        err.status = res.status;
+        throw err;
+    }
+    return data;
+}
+
+function registrarLocal(usuario, password){
+    const cuentas = cargarCuentasLocal();
+    if(cuentas[usuario]) throw new Error("Ese usuario ya existe en este dispositivo. Usa ENTRAR.");
+    cuentas[usuario] = {
+        password: password,
+        record: 0,
+        partidas: 0,
+        maxNivel: 1,
+        unlocked: []
+    };
+    guardarCuentasLocal(cuentas);
+    escapeToken = "local:" + usuario;
+    localStorage.setItem(TOKEN_KEY, escapeToken);
+    modoLocalSinServidor = true;
+    aplicarPlayerServidor({
+        usuario, record:0, partidas:0, maxNivel:1, unlocked:[]
+    });
+}
+
+function loginLocal(usuario, password){
+    const cuentas = cargarCuentasLocal();
+    const c = cuentas[usuario];
+    if(!c || c.password !== password){
+        throw new Error("Usuario o contraseña incorrectos. En Netlify debes REGISTRARTE otra vez en este navegador (no es la misma cuenta de tu PC local).");
+    }
+    escapeToken = "local:" + usuario;
+    localStorage.setItem(TOKEN_KEY, escapeToken);
+    modoLocalSinServidor = true;
+    aplicarPlayerServidor({
+        usuario,
+        record: c.record || 0,
+        partidas: c.partidas || 0,
+        maxNivel: c.maxNivel || 1,
+        unlocked: c.unlocked || []
+    });
+}
+
+function guardarCuentaLocalDesdePerfil(){
+    if(!perfilJugador || !escapeToken || !String(escapeToken).startsWith("local:")) return;
+    const usuario = perfilJugador.usuario || perfilJugador.nombre;
+    const cuentas = cargarCuentasLocal();
+    if(!cuentas[usuario]) return;
+    cuentas[usuario].record = perfilJugador.record || 0;
+    cuentas[usuario].partidas = perfilJugador.partidas || 0;
+    cuentas[usuario].maxNivel = perfilJugador.maxNivel || 1;
+    cuentas[usuario].unlocked = perfilJugador.unlocked || [];
+    guardarCuentasLocal(cuentas);
+}
+
+function cargarPerfil(){
+    try{
+        const raw = localStorage.getItem(PERFIL_KEY);
+        if(!raw) return null;
+        const p = JSON.parse(raw);
+        if(!p || !p.nombre) return null;
+        return p;
+    }catch(_){ return null; }
+}
+
+function guardarPerfil(){
+    if(!perfilJugador) return;
+    localStorage.setItem(PERFIL_KEY, JSON.stringify(perfilJugador));
+}
+
+function acumularTiempoJuego(){
+    if(!jugando) { ultimoHeartbeatMs = Date.now(); return; }
+    const now = Date.now();
+    const delta = Math.floor((now - ultimoHeartbeatMs) / 1000);
+    if(delta > 0){
+        playTimePendiente += Math.min(delta, 60);
+        ultimoHeartbeatMs = now;
+    }
+}
+
+async function enviarHeartbeat(forzar){
+    acumularTiempoJuego();
+    if(!perfilJugador || !escapeToken || String(escapeToken).startsWith("local:")){
+        playTimePendiente = 0;
+        return;
+    }
+    if(!forzar && playTimePendiente < 5) return;
+    const secs = playTimePendiente;
+    playTimePendiente = 0;
+    try{
+        const data = await apiEscape("/heartbeat", {
+            playSeconds: secs,
+            maxNivel: Math.max(perfilJugador.maxNivel || 1, typeof nivelActual === "number" ? nivelActual : 1),
+            record: Math.max(perfilJugador.record || 0, typeof puntos === "number" ? puntos : 0)
+        });
+        if(data.player){
+            perfilJugador.playTimeSec = data.player.playTimeSec;
+            if(data.player.maxNivel) perfilJugador.maxNivel = data.player.maxNivel;
+            if(data.player.record != null) perfilJugador.record = Math.max(perfilJugador.record || 0, data.player.record);
+            guardarPerfil();
+        }
+    }catch(_){
+        playTimePendiente += secs;
+    }
+}
+
+function iniciarHeartbeatJuego(){
+    detenerHeartbeatJuego();
+    ultimoHeartbeatMs = Date.now();
+    playHeartbeatTimer = setInterval(() => { enviarHeartbeat(false); }, 15000);
+    // Primera sincronización al entrar al nivel
+    setTimeout(() => { enviarHeartbeat(true); sincronizarProgreso(); }, 800);
+}
+
+function detenerHeartbeatJuego(){
+    if(playHeartbeatTimer){
+        clearInterval(playHeartbeatTimer);
+        playHeartbeatTimer = null;
+    }
+    enviarHeartbeat(true);
+}
+
+async function sincronizarProgreso(){
+    if(!perfilJugador) return;
+    acumularTiempoJuego();
+    guardarPerfil();
+    if(!escapeToken) return;
+    if(String(escapeToken).startsWith("local:")){
+        guardarCuentaLocalDesdePerfil();
+        return;
+    }
+    const secs = playTimePendiente;
+    playTimePendiente = 0;
+    try{
+        const data = await apiEscape("/save", {
+            record: perfilJugador.record || 0,
+            partidas: perfilJugador.partidas || 0,
+            maxNivel: perfilJugador.maxNivel || 1,
+            unlocked: perfilJugador.unlocked || [],
+            playSeconds: secs
+        });
+        if(data.player) aplicarPlayerServidor(data.player);
+    }catch(_){
+        playTimePendiente += secs;
+    }
+}
+
+function aplicarPlayerServidor(player){
+    perfilJugador = {
+        id: player.id,
+        nombre: player.usuario || player.nombre,
+        usuario: player.usuario || player.nombre,
+        record: player.record || 0,
+        partidas: player.partidas || 0,
+        maxNivel: player.maxNivel || 1,
+        unlocked: player.unlocked || [],
+        playTimeSec: player.playTimeSec || 0
+    };
+    guardarPerfil();
+}
+
+function actualizarUIPerfil(){
+    if(!perfilJugador) return;
+    document.getElementById("saludoMenu").innerHTML = "Hacker: " + perfilJugador.nombre;
+    document.getElementById("recordMenu").innerHTML =
+        "Récord: " + (perfilJugador.record || 0) + " pts · Nivel máx: " + (perfilJugador.maxNivel || 1);
+    document.getElementById("hudJugador").innerHTML = perfilJugador.nombre;
+}
+
+function mostrarTabLogin(tab){
+    const reg = tab === "registro";
+    document.getElementById("tabsLogin").style.display = "flex";
+    document.getElementById("panelLoginNuevo").style.display = reg ? "block" : "none";
+    document.getElementById("panelLoginExistente").style.display = reg ? "none" : "block";
+    document.getElementById("panelSesionActiva").style.display = "none";
+    document.getElementById("tabRegistro").style.background = reg ? "#00ffff" : "#446677";
+    document.getElementById("tabEntrar").style.background = reg ? "#446677" : "#00ffff";
+    document.getElementById("loginError").innerHTML = "";
+    const e2 = document.getElementById("loginError2");
+    if(e2) e2.innerHTML = "";
+}
+
+function mostrarPantallaLogin(){
+    // Si hay partida en curso, no interrumpir (otro dispositivo / overlay accidental)
+    if(typeof jugando !== "undefined" && jugando){
+        document.getElementById("login").style.display = "none";
+        return;
+    }
+    if(document.body.classList.contains("modo-juego")){
+        document.getElementById("login").style.display = "none";
+        return;
+    }
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("menu").style.display = "none";
+    if(escapeToken && perfilJugador){
+        document.getElementById("tabsLogin").style.display = "none";
+        document.getElementById("panelLoginNuevo").style.display = "none";
+        document.getElementById("panelLoginExistente").style.display = "none";
+        document.getElementById("panelSesionActiva").style.display = "block";
+        document.getElementById("nombreGuardado").innerHTML = perfilJugador.nombre;
+        document.getElementById("recordSesion").innerHTML =
+            "Récord: " + (perfilJugador.record || 0) + " pts · Nivel máx: " + (perfilJugador.maxNivel || 1);
+        return;
+    }
+    mostrarTabLogin("registro");
+    if(escapeToken && !String(escapeToken).startsWith("local:")){
+        apiEscape("/me").then(data => {
+            if(jugando || document.body.classList.contains("modo-juego")) return;
+            aplicarPlayerServidor(data.player);
+            mostrarPantallaLogin();
+        }).catch((e) => {
+            if(jugando || document.body.classList.contains("modo-juego")) return;
+            // Solo limpiar si el servidor rechazó el token (401), no por red caída
+            if(e && e.status === 401){
+                escapeToken = null;
+                perfilJugador = null;
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(PERFIL_KEY);
+            }
+            mostrarTabLogin("registro");
+        });
+    }
+}
+
+async function registrarJugador(){
+    const usuario = (document.getElementById("nombreJugador").value || "").trim().toLowerCase();
+    const password = (document.getElementById("passJugador") && document.getElementById("passJugador").value) || "";
+    const err = document.getElementById("loginError");
+    err.innerHTML = "";
+    if(usuario.length < 3){ err.innerHTML = "Usuario: mínimo 3 caracteres"; return; }
+    if(password.length < 4){ err.innerHTML = "Contraseña: mínimo 4 caracteres"; return; }
+    try{
+        const data = await apiEscape("/register", { usuario, password, deviceId: getDeviceId() });
+        escapeToken = data.token;
+        localStorage.setItem(TOKEN_KEY, escapeToken);
+        if(data.deviceId) localStorage.setItem(DEVICE_KEY, data.deviceId);
+        modoLocalSinServidor = false;
+        aplicarPlayerServidor(data.player);
+        sonidoClick();
+        asegurarAudio();
+        iniciarMusica();
+        entrarConPerfil();
+    }catch(e){
+        if(!esErrorSinServidor(e)){
+            err.innerHTML = e.message || "No se pudo registrar";
+            return;
+        }
+        try{
+            registrarLocal(usuario, password);
+            sonidoClick();
+            asegurarAudio();
+            iniciarMusica();
+            entrarConPerfil();
+        }catch(e2){
+            err.innerHTML = e2.message || "No se pudo crear la cuenta local";
+        }
+    }
+}
+
+async function loginJugador(){
+    const usuario = (document.getElementById("loginUsuario").value || "").trim().toLowerCase();
+    const password = document.getElementById("loginPass").value || "";
+    const err = document.getElementById("loginError2");
+    err.innerHTML = "";
+    if(!usuario || !password){ err.innerHTML = "Escribe usuario y contraseña"; return; }
+    try{
+        const data = await apiEscape("/login", { usuario, password, deviceId: getDeviceId() });
+        escapeToken = data.token;
+        localStorage.setItem(TOKEN_KEY, escapeToken);
+        if(data.deviceId) localStorage.setItem(DEVICE_KEY, data.deviceId);
+        modoLocalSinServidor = false;
+        aplicarPlayerServidor(data.player);
+        sonidoClick();
+        asegurarAudio();
+        iniciarMusica();
+        entrarConPerfil();
+    }catch(e){
+        if(!esErrorSinServidor(e)){
+            const msg = e.message || "No se pudo entrar";
+            err.innerHTML = /incorrectos|incorrecto|401/i.test(msg)
+                ? "Usuario o contraseña incorrectos. Si nunca te registraste en la nube, usa la pestaña REGISTRO."
+                : msg;
+            return;
+        }
+        try{
+            loginLocal(usuario, password);
+            sonidoClick();
+            asegurarAudio();
+            iniciarMusica();
+            entrarConPerfil();
+        }catch(e2){
+            err.innerHTML = e2.message || "No se pudo entrar. Prueba REGISTRO.";
+        }
+    }
+}
+
+function entrarConPerfil(){
+    if(!perfilJugador) perfilJugador = cargarPerfil();
+    if(!perfilJugador){
+        mostrarPantallaLogin();
+        return;
+    }
+    actualizarUIPerfil();
+    document.getElementById("login").style.display = "none";
+    document.getElementById("menu").style.display = "flex";
+    asegurarAudio();
+    iniciarMusica();
+    sonidoClick();
+}
+
+function cambiarJugador(){
+    mostrarTabLogin("entrar");
+}
+
+function irACambiarJugador(){
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    mostrarTabLogin("entrar");
+}
+
+function cerrarSesionEscape(){
+    escapeToken = null;
+    perfilJugador = null;
+    modoLocalSinServidor = false;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(PERFIL_KEY);
+    document.getElementById("panelSesionActiva").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("menu").style.display = "none";
+    mostrarTabLogin("registro");
+    const err = document.getElementById("loginError");
+    if(err) err.innerHTML = "Sesión cerrada. Crea tu cuenta (REGISTRO) o entra con la tuya (ENTRAR).";
+}
+
+function guardarRecord(){
+    if(!perfilJugador) return;
+    perfilJugador.partidas = (perfilJugador.partidas || 0) + 1;
+    if(puntos > (perfilJugador.record || 0)){
+        perfilJugador.record = puntos;
+    }
+    sincronizarProgreso();
+    actualizarUIPerfil();
+}
+
+function registrarProgresoNivel(n){
+    if(!perfilJugador) return;
+    perfilJugador.maxNivel = Math.max(perfilJugador.maxNivel || 1, n);
+    sincronizarProgreso();
+}
+
+// ===============================
+// AUDIO: música + SFX
+// ===============================
+let audioCtx = null;
+let musicaActiva = localStorage.getItem("escapeHackerMusica") !== "0";
+let musicaTimer = null;
+let musicaGain = null;
+let pasoMusica = 0;
+
+function asegurarAudio(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+}
+
+function tono(freq, dur, type, vol, when){
+    const ctx = asegurarAudio();
+    const t0 = (when != null ? when : ctx.currentTime);
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type || "square";
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.08, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+}
+
+function sonidoClick(){
+    tono(600, 0.08, "square", 0.07);
+}
+
+function sonidoMoneda(){
+    // Sonido tipo moneda/llave (arpegio brillante)
+    const ctx = asegurarAudio();
+    const t = ctx.currentTime;
+    tono(880, 0.09, "triangle", 0.12, t);
+    tono(1175, 0.10, "triangle", 0.11, t + 0.07);
+    tono(1568, 0.16, "sine", 0.10, t + 0.14);
+}
+
+const MELODIA_CODE = [
+    // Arpegios tipo chiptune / terminal (Am)
+    220, 261, 329, 392, 329, 261, 220, 196,
+    174, 220, 261, 329, 261, 220, 196, 174,
+    246, 293, 369, 440, 369, 293, 246, 220,
+    196, 246, 293, 349, 293, 246, 196, 164
+];
+const MELODIA_HACK = [
+    164, 196, 246, 293, 246, 196, 164, 146,
+    130, 164, 196, 246, 196, 164, 146, 130,
+    184, 220, 277, 329, 277, 220, 184, 164,
+    146, 184, 220, 261, 220, 184, 146, 123
+];
+const MELODIA_ROOT = [
+    110, 130, 164, 196, 164, 130, 110, 98,
+    87, 110, 130, 164, 130, 110, 98, 87,
+    123, 146, 184, 220, 184, 146, 123, 110,
+    98, 123, 146, 174, 146, 123, 98, 82
+];
+
+let nivelMusica = 1;
+let pasoPercusion = 0;
+
+function configMusica(n){
+    const nivel = Math.max(1, Math.min(10, n || nivelActual || 1));
+    const oscuridad = (nivel - 1) / 9;
+    let base = MELODIA_CODE;
+    if(nivel >= 8) base = MELODIA_ROOT;
+    else if(nivel >= 4) base = MELODIA_HACK;
+    // Estilo programador: más agudo / sintético al inicio, más grave al final
+    const pitch = 1.08 - oscuridad * 0.35;
+    const melodia = base.map(f => Math.max(55, f * pitch));
+    return {
+        nivel,
+        oscuridad,
+        melodia,
+        tempo: Math.round(145 - oscuridad * 35), // más rápido = más "code rush"
+        wave: "square",
+        gain: 0.032 + oscuridad * 0.028,
+        dissonance: true,
+        dissonanceAmt: 0.12 + oscuridad * 0.28,
+        noteLen: 0.11 + oscuridad * 0.06,
+        bassHeavy: true,
+        blips: true
+    };
+}
+
+function reiniciarMusicaNivel(n){
+    nivelMusica = n || nivelActual || 1;
+    detenerMusica();
+    if(musicaActiva) iniciarMusica();
+}
+
+function iniciarMusica(){
+    if(!musicaActiva) return;
+    asegurarAudio();
+    if(musicaTimer) return;
+    const cfg = configMusica(nivelMusica || nivelActual || 1);
+    if(!musicaGain){
+        musicaGain = audioCtx.createGain();
+        musicaGain.connect(audioCtx.destination);
+    }
+    musicaGain.gain.value = cfg.gain;
+    pasoMusica = 0;
+    pasoPercusion = 0;
+    musicaTimer = setInterval(() => {
+        if(!musicaActiva || !audioCtx) return;
+        const c = configMusica(nivelMusica || nivelActual || 1);
+        const freq = c.melodia[pasoMusica % c.melodia.length];
+        const t = audioCtx.currentTime;
+
+        // Lead square (estilo 8-bit / terminal)
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.7, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + c.noteLen);
+        osc.connect(g);
+        g.connect(musicaGain);
+        osc.start(t);
+        osc.stop(t + c.noteLen + 0.02);
+
+        // Quinta / octava tipo arpegio de código
+        if(c.dissonance && pasoMusica % 2 === 0){
+            const d = audioCtx.createOscillator();
+            const dg = audioCtx.createGain();
+            d.type = "square";
+            d.frequency.value = freq * 1.5;
+            dg.gain.setValueAtTime(0.0001, t);
+            dg.gain.exponentialRampToValueAtTime(c.dissonanceAmt * 0.55, t + 0.01);
+            dg.gain.exponentialRampToValueAtTime(0.0001, t + c.noteLen * 0.7);
+            d.connect(dg);
+            dg.connect(musicaGain);
+            d.start(t);
+            d.stop(t + c.noteLen);
+        }
+
+        // Bajo pulse
+        if(pasoMusica % 4 === 0){
+            const bass = audioCtx.createOscillator();
+            const bg = audioCtx.createGain();
+            bass.type = "square";
+            bass.frequency.value = Math.max(40, freq / 2);
+            bg.gain.setValueAtTime(0.0001, t);
+            bg.gain.exponentialRampToValueAtTime(0.45 + c.oscuridad * 0.25, t + 0.02);
+            bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+            bass.connect(bg);
+            bg.connect(musicaGain);
+            bass.start(t);
+            bass.stop(t + 0.22);
+        }
+
+        // Blips de teclado / bit (percusión programador)
+        if(c.blips && pasoMusica % 2 === 1){
+            const click = audioCtx.createOscillator();
+            const cg = audioCtx.createGain();
+            click.type = "square";
+            click.frequency.value = 1200 + (pasoPercusion % 4) * 180;
+            cg.gain.setValueAtTime(0.0001, t);
+            cg.gain.exponentialRampToValueAtTime(0.18, t + 0.005);
+            cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+            click.connect(cg);
+            cg.connect(musicaGain);
+            click.start(t);
+            click.stop(t + 0.05);
+            pasoPercusion++;
+        }
+
+        pasoMusica++;
+    }, configMusica(nivelMusica || nivelActual || 1).tempo);
+    actualizarBtnMusica();
+}
+
+function detenerMusica(){
+    if(musicaTimer){
+        clearInterval(musicaTimer);
+        musicaTimer = null;
+    }
+}
+
+function toggleMusica(){
+    musicaActiva = !musicaActiva;
+    localStorage.setItem("escapeHackerMusica", musicaActiva ? "1" : "0");
+    if(musicaActiva){
+        asegurarAudio();
+        iniciarMusica();
+    } else {
+        detenerMusica();
+    }
+    actualizarBtnMusica();
+}
+
+function actualizarBtnMusica(){
+    const btn = document.getElementById("btnMusica");
+    if(btn) btn.textContent = musicaActiva ? "🔊" : "🔇";
+}
+
+document.getElementById("nombreJugador").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+        const pass = document.getElementById("passJugador");
+        if(pass) pass.focus();
+        else registrarJugador();
+    }
+});
+const passEl = document.getElementById("passJugador");
+if(passEl) passEl.addEventListener("keydown", e => { if(e.key === "Enter") registrarJugador(); });
+const loginPassEl = document.getElementById("loginPass");
+if(loginPassEl) loginPassEl.addEventListener("keydown", e => { if(e.key === "Enter") loginJugador(); });
+
+// Arranque de sesión: carga perfil local; si hay token de nube, lo valida
+perfilJugador = cargarPerfil();
+escapeToken = localStorage.getItem(TOKEN_KEY) || null;
+actualizarBtnMusica();
+
+/** Pantalla de carga: muestra personajes, malware y hacker mientras precarga imágenes. */
+function iniciarPantallaCarga(alTerminar){
+    const pantalla = document.getElementById("pantallaCarga");
+    const imgEl = document.getElementById("cargaImg");
+    const etiq = document.getElementById("cargaEtiqueta");
+    const barra = document.getElementById("cargaBarra");
+    const pctEl = document.getElementById("cargaPct");
+    if(!pantalla || !imgEl){ alTerminar(); return; }
+
+    const slides = [];
+    slides.push({ src:"assets/hacker/hacker.png", label:"EL HACKER" });
+    personajes.forEach(p => slides.push({ src:p.img, label:p.nombre }));
+    Object.keys(malwares).forEach(k => {
+        const m = malwares[k];
+        slides.push({ src: m.intro || m.archivo, label: m.nombre });
+    });
+
+    const urls = [];
+    const visto = new Set();
+    slides.forEach(s => {
+        if(s.src && !visto.has(s.src)){ visto.add(s.src); urls.push(s.src); }
+    });
+    // También precarga sprites de combate
+    Object.keys(malwares).forEach(k => {
+        const a = malwares[k].archivo;
+        if(a && !visto.has(a)){ visto.add(a); urls.push(a); }
+    });
+
+    let listos = 0;
+    let slideIdx = 0;
+    const total = Math.max(1, urls.length);
+
+    function pintarPct(){
+        const p = Math.min(100, Math.round((listos / total) * 100));
+        if(barra) barra.style.width = p + "%";
+        if(pctEl) pctEl.textContent = p + "%";
+    }
+    function mostrarSlide(i){
+        const s = slides[i % slides.length];
+        if(!s) return;
+        imgEl.style.opacity = "0";
+        setTimeout(() => {
+            imgEl.src = s.src;
+            if(etiq) etiq.textContent = s.label;
+            imgEl.style.opacity = "1";
+        }, 180);
+    }
+    mostrarSlide(0);
+    const carousel = setInterval(() => {
+        slideIdx++;
+        mostrarSlide(slideIdx);
+    }, 900);
+
+    function fin(){
+        clearInterval(carousel);
+        pintarPct();
+        setTimeout(() => {
+            pantalla.classList.add("oculta");
+            setTimeout(() => {
+                pantalla.style.display = "none";
+                alTerminar();
+            }, 450);
+        }, 350);
+    }
+
+    if(!urls.length){ pintarPct(); fin(); return; }
+
+    urls.forEach(src => {
+        const im = new Image();
+        const done = () => {
+            listos++;
+            pintarPct();
+            if(listos >= total) fin();
+        };
+        im.onload = done;
+        im.onerror = done;
+        im.src = src;
+    });
+    // Seguridad: no bloquear si algo falla en la red
+    setTimeout(() => { if(listos < total){ listos = total; pintarPct(); fin(); } }, 12000);
+}
+
+iniciarPantallaCarga(() => {
+    mostrarPantallaLogin();
+});
+
+console.log("Escape del Hacker 2.0 · cuentas + personajes nivel 7");
+
+(function initNativo(){
+    const cap = window.Capacitor;
+    const esNativo = !!(cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform());
+    if(esNativo){
+        // En app Android no usamos service worker (Capacitor ya sirve los archivos locales).
+        const plugins = cap.Plugins || {};
+        if(plugins.StatusBar){
+            plugins.StatusBar.setBackgroundColor({ color: "#000000" }).catch(()=>{});
+            plugins.StatusBar.setStyle({ style: "DARK" }).catch(()=>{});
+        }
+        if(plugins.SplashScreen){
+            setTimeout(() => plugins.SplashScreen.hide().catch(()=>{}), 400);
+        }
+        return;
+    }
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./sw-escape.js").catch(() => {});
+        });
+    }
+})();
+</script>
+</body>
+</html>

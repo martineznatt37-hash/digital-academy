@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Maestro — Digital Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/teacher.css">
+</head>
+<body>
+  <div class="teacher-layout">
+    <aside class="teacher-sidebar">
+      <a href="index.html" class="logo"><div class="logo-icon">🎓</div> Digital Academy</a>
+      <p class="teacher-role">Panel de maestro</p>
+      <nav class="teacher-nav">
+        <button class="teacher-nav-btn active" data-tab="overview">📊 Resumen</button>
+        <button class="teacher-nav-btn" data-tab="users">👥 Usuarios</button>
+        <button class="teacher-nav-btn" data-tab="sessions">📅 Mis asesorías</button>
+        <button class="teacher-nav-btn" data-tab="profile">👤 Mi perfil</button>
+        <button class="teacher-nav-btn" data-tab="notifications">🔔 Notificaciones</button>
+      </nav>
+      <button class="btn btn-outline btn-sm" id="teacher-logout">Cerrar sesión</button>
+    </aside>
+
+    <main class="teacher-main">
+      <header class="teacher-header">
+        <div>
+          <h1 id="teacher-title">Resumen</h1>
+          <p id="teacher-subtitle" class="teacher-subtitle"></p>
+        </div>
+        <div class="teacher-header-user">
+          <span id="teacher-user"></span>
+          <span id="teacher-status-badge" class="badge"></span>
+        </div>
+      </header>
+
+      <div id="teacher-alert" class="teacher-alert" hidden></div>
+
+      <section class="teacher-panel active" id="panel-overview">
+        <div class="teacher-stats" id="teacher-stats"></div>
+        <div class="teacher-card" id="teacher-upcoming"></div>
+      </section>
+
+      <section class="teacher-panel" id="panel-users">
+        <h2>Registros de usuarios</h2>
+        <p class="teacher-panel-desc">Correo y contraseña de cada estudiante registrado en la plataforma.</p>
+        <div class="teacher-users-toolbar">
+          <input type="search" id="teacher-users-search" class="teacher-search" placeholder="Buscar por nombre o correo..." aria-label="Buscar usuarios">
+        </div>
+        <div class="teacher-table-wrap" id="users-table"></div>
+      </section>
+
+      <section class="teacher-panel" id="panel-sessions">
+        <h2>Asesorías asignadas</h2>
+        <p class="teacher-panel-desc">Sesiones que los estudiantes han solicitado contigo.</p>
+        <div class="teacher-table-wrap" id="sessions-table"></div>
+      </section>
+
+      <section class="teacher-panel" id="panel-profile">
+        <h2>Perfil profesional</h2>
+        <div class="teacher-card" id="teacher-profile-card"></div>
+      </section>
+
+      <section class="teacher-panel" id="panel-notifications">
+        <h2>Notificaciones</h2>
+        <div class="teacher-notif-list" id="teacher-notifications"></div>
+      </section>
+    </main>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/teacher.js"></script>
+</body>
+</html>

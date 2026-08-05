@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Escape del Hacker</title>
+<style>
+  :root{
+    --bg:#071018; --card:#0d2230; --line:#1e5a6e; --cyan:#00e6e6; --text:#e8f6ff; --muted:#8fb0c4; --warn:#ffcc66;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; font-family:Segoe UI, system-ui, sans-serif;
+    background:radial-gradient(circle at 20% 0%, #123048, var(--bg) 55%);
+    color:var(--text); padding:24px;
+  }
+  h1{ margin:0 0 6px; color:var(--cyan); letter-spacing:.04em; }
+  .sub{ color:var(--muted); margin:0 0 22px; }
+  .card{
+    background:rgba(13,34,48,.92); border:1px solid var(--line); border-radius:14px;
+    padding:20px; max-width:1100px; margin:0 auto 18px;
+    box-shadow:0 0 30px rgba(0,230,230,.08);
+  }
+  label{ display:block; color:var(--cyan); font-size:13px; margin:10px 0 6px; }
+  input{
+    width:100%; max-width:360px; padding:12px 14px; border-radius:10px;
+    border:1px solid var(--line); background:#061520; color:var(--text); font-size:16px;
+  }
+  button{
+    margin-top:14px; padding:12px 18px; border:0; border-radius:10px; cursor:pointer;
+    background:var(--cyan); color:#002228; font-weight:700; font-size:15px;
+  }
+  button.secondary{ background:#234556; color:#dff; margin-left:8px; }
+  .error{ color:#ff7a8a; min-height:20px; margin-top:8px; }
+  .ok{ color:#7dffb0; font-size:13px; margin-top:8px; }
+  .stats{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+  .stat{
+    flex:1 1 160px; background:#0a1a26; border:1px solid var(--line);
+    border-radius:12px; padding:14px;
+  }
+  .stat b{ display:block; font-size:22px; color:var(--warn); }
+  .stat span{ color:var(--muted); font-size:13px; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th, td{ padding:10px 8px; border-bottom:1px solid #163445; text-align:left; }
+  th{ color:var(--cyan); font-weight:600; position:sticky; top:0; background:#0d2230; }
+  tr:hover td{ background:rgba(0,230,230,.05); }
+  .wrap{ overflow:auto; max-height:70vh; }
+  #panelAdmin{ display:none; }
+  .top{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; }
+  .live{ color:#7dffb0; font-size:13px; }
+  .hint{ color:#ffcc66; font-size:13px; line-height:1.4; margin:0 0 12px; }
+</style>
+</head>
+<body>
+  <div class="card" id="panelLogin">
+    <h1>ADMIN · ESCAPE DEL HACKER</h1>
+    <p class="sub">Solo tú puedes ver el registro de jugadores.</p>
+    <label>Usuario admin</label>
+    <input id="user" autocomplete="username" placeholder="vibrantemoto">
+    <label>Contraseña</label>
+    <input id="pass" type="password" autocomplete="current-password" placeholder="tu contraseña">
+    <div class="error" id="err"></div>
+    <button onclick="loginAdmin()">ENTRAR AL PANEL</button>
+  </div>
+
+  <div id="panelAdmin">
+    <div class="card top">
+      <div>
+        <h1>Registro de jugadores</h1>
+        <p class="sub" id="adminWho">—</p>
+        <p class="live" id="liveInfo">Actualización automática cada 5 s</p>
+      </div>
+      <div>
+        <button class="secondary" onclick="cargar(true)">Actualizar ahora</button>
+        <button class="secondary" onclick="logout()">Salir</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="hint">
+        Si todo sale en 0, los jugadores están entrando sin la API de la nube.
+        Deben abrir el juego desde Netlify (el juego ya apunta solo a Render).
+        Luego: REGISTRO o ENTRAR → jugar → aquí se verá el progreso.
+      </p>
+      <div class="stats" id="stats"></div>
+      <div class="wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Usuario</th>
+              <th>Nivel máx</th>
+              <th>Récord</th>
+              <th>Partidas</th>
+              <th>Tiempo jugado</th>
+              <th>Última vez</th>
+              <th>Registro</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="ok" id="statusLine"></div>
+    </div>
+  </div>
+
+<script>
+const TOKEN_KEY = "escapeAdminToken";
+const API = (location.origin.replace(/\/$/, "")) + "/api/escape";
+let refreshTimer = null;
+
+function fmtTime(sec){
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if(h > 0) return h + "h " + m + "m";
+  if(m > 0) return m + "m " + s + "s";
+  return s + "s";
+}
+function fmtDate(v){
+  if(!v) return "—";
+  try{
+    const d = new Date(v.includes("T") ? v : v.replace(" ", "T") + "Z");
+    if(Number.isNaN(d.getTime())) return v;
+    return d.toLocaleString();
+  }catch(_){ return v; }
+}
+
+async function api(path, body, method){
+  const opts = { method: method || (body ? "POST" : "GET"), headers: { "Content-Type":"application/json" } };
+  const tok = localStorage.getItem(TOKEN_KEY);
+  if(tok) opts.headers.Authorization = "Bearer " + tok;
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.error || ("Error " + res.status));
+  return data;
+}
+
+function startAutoRefresh(){
+  stopAutoRefresh();
+  refreshTimer = setInterval(() => cargar(false), 5000);
+}
+function stopAutoRefresh(){
+  if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+}
+
+async function loginAdmin(){
+  const err = document.getElementById("err");
+  err.textContent = "";
+  const usuario = (document.getElementById("user").value || "").trim().toLowerCase();
+  const password = document.getElementById("pass").value || "";
+  try{
+    const data = await api("/admin/login", { usuario, password });
+    localStorage.setItem(TOKEN_KEY, data.token);
+    document.getElementById("adminWho").textContent = "Admin: " + (data.admin && data.admin.usuario);
+    document.getElementById("panelLogin").style.display = "none";
+    document.getElementById("panelAdmin").style.display = "block";
+    await cargar(true);
+    startAutoRefresh();
+  }catch(e){
+    err.textContent = e.message || "No se pudo entrar";
+  }
+}
+
+function logout(){
+  stopAutoRefresh();
+  localStorage.removeItem(TOKEN_KEY);
+  document.getElementById("panelAdmin").style.display = "none";
+  document.getElementById("panelLogin").style.display = "block";
+}
+
+async function cargar(manual){
+  const status = document.getElementById("statusLine");
+  try{
+    const [stats, list] = await Promise.all([
+      api("/admin/stats"),
+      api("/admin/players")
+    ]);
+    document.getElementById("stats").innerHTML =
+      '<div class="stat"><b>' + stats.totalJugadores + '</b><span>Jugadores registrados</span></div>' +
+      '<div class="stat"><b>' + fmtTime(stats.tiempoTotalSec) + '</b><span>Tiempo total jugado</span></div>' +
+      '<div class="stat"><b>' + stats.nivelMaxGlobal + '</b><span>Nivel máximo global</span></div>';
+
+    const players = list.players || [];
+    const tb = document.getElementById("tbody");
+    tb.innerHTML = players.map((p, i) =>
+      "<tr>" +
+        "<td>" + (i+1) + "</td>" +
+        "<td>" + p.usuario + (p.isAdmin ? " ★" : "") + "</td>" +
+        "<td>" + (p.maxNivel || 1) + "</td>" +
+        "<td>" + (p.record || 0) + "</td>" +
+        "<td>" + (p.partidas || 0) + "</td>" +
+        "<td>" + fmtTime(p.playTimeSec) + "</td>" +
+        "<td>" + fmtDate(p.lastSeenAt || p.updatedAt) + "</td>" +
+        "<td>" + fmtDate(p.createdAt) + "</td>" +
+      "</tr>"
+    ).join("") || "<tr><td colspan='8'>Sin jugadores aún</td></tr>";
+
+    const now = new Date().toLocaleTimeString();
+    document.getElementById("liveInfo").textContent =
+      "Última lectura: " + now + " · auto cada 5 s · " + players.length + " jugador(es)";
+    if(status) status.textContent = manual ? "Actualizado a las " + now : "";
+  }catch(e){
+    if(/401|403|administrador|autenticado|Sesión/i.test(String(e.message))) logout();
+    else if(status) status.textContent = "Error: " + (e.message || "no se pudo cargar");
+  }
+}
+
+(async function boot(){
+  if(!localStorage.getItem(TOKEN_KEY)) return;
+  try{
+    document.getElementById("panelLogin").style.display = "none";
+    document.getElementById("panelAdmin").style.display = "block";
+    document.getElementById("adminWho").textContent = "Sesión admin activa";
+    await cargar(true);
+    startAutoRefresh();
+  }catch(_){ logout(); }
+})();
+</script>
+</body>
+</html>

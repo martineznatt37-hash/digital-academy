@@ -1,0 +1,23 @@
+{
+  "name": "escape-del-hacker",
+  "version": "1.0.0",
+  "description": "Escape del Hacker 2.0 - Android app",
+  "private": true,
+  "scripts": {
+    "copy-web": "node scripts/copy-web.js",
+    "icons": "node scripts/apply-icons.js",
+    "sync": "npm run copy-web && npx cap sync android",
+    "open": "npx cap open android",
+    "prepare-release": "npm run sync && npm run icons"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3"
+  }
+}

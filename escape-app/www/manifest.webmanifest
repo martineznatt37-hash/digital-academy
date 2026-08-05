@@ -1,0 +1,32 @@
+{
+  "name": "Escape del Hacker 2.0",
+  "short_name": "Escape Hacker",
+  "description": "Escapa del sistema: 10 niveles, combate malware y jefes virus.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#00ffff",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/escape-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/escape-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/escape-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

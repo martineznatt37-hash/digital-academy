@@ -1,0 +1,12 @@
+node_modules/
+server/node_modules/
+server/.env
+.env
+server/digital-academy.db
+server/digital-academy.db-*
+*.log
+.DS_Store
+.cursor/
+dist-netlify/
+digital-academy-netlify.zip
+escape-app/node_modules/

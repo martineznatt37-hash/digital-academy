@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Academy — Aprende. Crece. Transforma tu futuro.</title>
+  <meta name="description" content="Plataforma educativa con Inteligencia Artificial para estudiantes de primaria, secundaria y preparatoria.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/pet.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%232563EB' rx='20' width='100' height='100'/><text y='70' x='50' text-anchor='middle' font-size='55' fill='white'>D</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+        </div>
+        Digital Academy
+      </a>
+
+      <div class="nav-links">
+        <a href="#inicio">Inicio</a>
+        <a href="#cursos">Cursos</a>
+        <a href="#asesorias">Asesorías</a>
+        <a href="#estadisticas">Progreso</a>
+        <a href="#tecnologia">Tecnología</a>
+        <a href="#opiniones">Opiniones</a>
+        <a href="#movil">📱 Móvil</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="nav-search">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="search" placeholder="Buscar cursos..." aria-label="Buscar cursos">
+        </div>
+        <a href="profile.html" class="nav-notif" aria-label="Notificaciones">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge"></span>
+        </a>
+        <a href="login.html" class="btn btn-ghost">Iniciar sesión</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Registrarse</a>
+        <button class="menu-toggle" aria-label="Menú">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="inicio">
+    <div class="container">
+      <div class="hero-content">
+        <!--<div class="hero-badge"><span></span> Plataforma con Inteligencia Artificial</div>-->
+        <h1>Digital <span class="gradient-text">Academy</span></h1>
+        <p class="hero-slogan">Aprende. Crece. Transforma tu futuro.</p>
+        <div class="hero-actions">
+          <a href="register.html" class="btn btn-primary">
+            Comenzar ahora
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#cursos" class="btn btn-outline">Explorar cursos</a>
+        </div>
+        <div class="hero-stats" id="hero-stats">
+          <div class="hero-stat"><strong id="stat-students">—</strong><span>Estudiantes activos</span></div>
+          <div class="hero-stat"><strong id="stat-courses">—</strong><span>Cursos disponibles</span></div>
+          <div class="hero-stat"><strong id="stat-satisfaction">—</strong><span>Satisfacción</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <svg class="hero-illustration" viewBox="0 0 560 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="560" height="420" rx="28" fill="#EDE9FE"/>
+          <rect x="40" y="60" width="480" height="300" rx="16" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="2"/>
+          <rect x="40" y="60" width="480" height="40" rx="16" fill="#F3F4F6"/>
+          <circle cx="68" cy="80" r="6" fill="#EF4444"/>
+          <circle cx="88" cy="80" r="6" fill="#F59E0B"/>
+          <circle cx="108" cy="80" r="6" fill="#10B981"/>
+          <circle cx="180" cy="280" r="40" fill="#DBEAFE"/>
+          <circle cx="180" cy="265" r="22" fill="#2563EB"/>
+          <rect x="155" y="295" width="50" height="60" rx="25" fill="#2563EB"/>
+          <circle cx="380" cy="280" r="40" fill="#EDE9FE"/>
+          <circle cx="380" cy="265" r="22" fill="#7C3AED"/>
+          <rect x="355" y="295" width="50" height="60" rx="25" fill="#7C3AED"/>
+          <rect x="220" y="200" width="120" height="80" rx="8" fill="#1F2937"/>
+          <rect x="228" y="208" width="104" height="60" rx="4" fill="#2563EB" opacity="0.8"/>
+          <rect x="250" y="280" width="60" height="8" rx="4" fill="#374151"/>
+          <rect x="235" y="288" width="90" height="6" rx="3" fill="#4B5563"/>
+          <circle cx="280" cy="170" r="30" fill="url(#aiGrad)" opacity="0.9"/>
+          <text x="280" y="178" text-anchor="middle" fill="white" font-size="20" font-weight="bold">AI</text>
+          <rect x="60" y="130" width="80" height="50" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+          <text x="100" y="160" text-anchor="middle" fill="#2563EB" font-size="11" font-weight="600">Matemáticas</text>
+          <rect x="420" y="130" width="80" height="50" rx="10" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.5"/>
+          <text x="460" y="160" text-anchor="middle" fill="#7C3AED" font-size="11" font-weight="600">Ciencias</text>
+          <rect x="60" y="320" width="80" height="50" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="1.5"/>
+          <text x="100" y="350" text-anchor="middle" fill="#10B981" font-size="11" font-weight="600">Programación</text>
+          <rect x="420" y="320" width="80" height="50" rx="10" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+          <text x="460" y="350" text-anchor="middle" fill="#F59E0B" font-size="11" font-weight="600">Inglés</text>
+          <line x1="140" y1="155" x2="220" y2="220" stroke="#2563EB" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.5"/>
+          <line x1="420" y1="155" x2="340" y2="220" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.5"/>
+          <defs>
+            <linearGradient id="aiGrad" x1="250" y1="140" x2="310" y2="200">
+              <stop stop-color="#2563EB"/>
+              <stop offset="1" stop-color="#7C3AED"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <!--<div class="hero-float-card card-1">
+          <div class="icon-wrap blue">🤖</div>
+          <div><strong>Asistente IA 24/7</strong><span>Siempre disponible</span></div>
+        </div>
+        <div class="hero-float-card card-2">
+          <div class="icon-wrap purple">🏆</div>
+          <div><strong>+500 Certificados</strong><span>Emitidos este mes</span></div>
+        </div>-->
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="section about" id="nosotros">
+    <div class="container">
+      <div class="about-grid reveal">
+        <div>
+          <span class="section-tag">¿Qué es Digital Academy?</span>
+          <h2 class="section-title" style="text-align:left">Todo lo que necesitas para aprender, en un solo lugar</h2>
+          <p style="color:var(--gray-500);margin-bottom:8px;line-height:1.8">
+            Digital Academy es una plataforma educativa innovadora que combina contenido académico de calidad con herramientas de Inteligencia Artificial para personalizar tu experiencia de aprendizaje.
+          </p>
+          <p style="color:var(--gray-500);line-height:1.8">
+            Ya seas estudiante de primaria, secundaria o preparatoria, o alguien que desea aprender tecnología desde cero, aquí encontrarás cursos, asesorías y un asistente virtual listo para ayudarte en cada paso.
+          </p>
+          <div class="about-features">
+            <div class="about-feature">
+              <div class="icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></div>
+              <h3>Contenido académico</h3>
+              <p>Cursos alineados con el plan de estudios oficial para todos los niveles.</p>
+            </div>
+            <div class="about-feature">
+              <div class="icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+              <h3>Tecnología accesible</h3>
+              <p>Aprende a usar computadoras e Internet sin experiencia previa.</p>
+            </div>
+            <div class="about-feature">
+              <div class="icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+              <h3>Asesorías personalizadas</h3>
+              <p>Agenda sesiones con expertos en la materia que necesites.</p>
+            </div>
+            <div class="about-feature">
+              <div class="icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+              <h3>Seguro y confiable</h3>
+              <p>Plataforma diseñada pensando en la seguridad de los estudiantes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="about-visual">
+          <svg viewBox="0 0 300 300" fill="none">
+            <circle cx="150" cy="150" r="120" fill="white" opacity="0.6"/>
+            <circle cx="150" cy="150" r="80" fill="white"/>
+            <text x="150" y="145" text-anchor="middle" fill="#2563EB" font-size="48" font-weight="800">DA</text>
+            <text x="150" y="175" text-anchor="middle" fill="#7C3AED" font-size="12" font-weight="600">DIGITAL ACADEMY</text>
+            <circle cx="60" cy="80" r="20" fill="#2563EB" opacity="0.2"/>
+            <circle cx="240" cy="220" r="30" fill="#7C3AED" opacity="0.2"/>
+            <circle cx="250" cy="70" r="15" fill="#2563EB" opacity="0.3"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Courses -->
+  <section class="section courses" id="cursos">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Cursos</span>
+        <h2 class="section-title">Aprende a tu ritmo, según tu nivel</h2>
+        <p class="section-desc">Explora nuestra biblioteca de cursos organizados por nivel educativo, con contenido interactivo y seguimiento de progreso.</p>
+        <p id="courses-level-hint" class="section-desc" style="display:none;color:var(--primary);font-weight:600;margin-top:-8px"></p>
+      </div>
+
+      <div class="course-tabs reveal">
+        <button class="course-tab active" data-level="all">Todos</button>
+        <button class="course-tab" data-level="primaria">Primaria</button>
+        <button class="course-tab" data-level="secundaria">Secundaria</button>
+        <button class="course-tab" data-level="preparatoria">Preparatoria</button>
+        <button class="course-tab" data-level="capacitacion">Tecnología</button>
+      </div>
+
+      <div class="courses-grid reveal">
+        <!-- Primaria -->
+        <article class="course-card" data-level="primaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#DBEAFE,#BFDBFE)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23DBEAFE' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%232563EB'%3E🔢%3C/text%3E%3C/svg%3E" alt="Matemáticas Divertidas">
+            <span class="course-level">Primaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Matemáticas Divertidas</h3>
+            <p>Aprende sumas, restas, multiplicaciones y divisiones con juegos interactivos y ejercicios paso a paso.</p>
+            <div class="course-meta">
+              <span>📚 24 lecciones</span>
+              <span>⏱ 12 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="primaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23D1FAE5' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%2310B981'%3E🌱%3C/text%3E%3C/svg%3E" alt="Ciencias Naturales">
+            <span class="course-level">Primaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Ciencias Naturales</h3>
+            <p>Explora el mundo de la naturaleza, los animales, las plantas y experimentos sencillos para hacer en casa.</p>
+            <div class="course-meta">
+              <span>📚 18 lecciones</span>
+              <span>⏱ 10 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="primaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23FEF3C7' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%23F59E0B'%3E📖%3C/text%3E%3C/svg%3E" alt="Lectura y Escritura">
+            <span class="course-level">Primaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Lectura y Escritura Creativa</h3>
+            <p>Desarrolla habilidades de lectura comprensiva y expresión escrita con cuentos, poemas y actividades creativas.</p>
+            <div class="course-meta">
+              <span>📚 20 lecciones</span>
+              <span>⏱ 8 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <!-- Secundaria -->
+        <article class="course-card" data-level="secundaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23EDE9FE' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%237C3AED'%3E📐%3C/text%3E%3C/svg%3E" alt="Álgebra Básica">
+            <span class="course-level">Secundaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Álgebra Básica</h3>
+            <p>Domina ecuaciones, factorización y funciones lineales con explicaciones claras y ejercicios resueltos paso a paso.</p>
+            <div class="course-meta">
+              <span>📚 32 lecciones</span>
+              <span>⏱ 20 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="secundaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#DBEAFE,#93C5FD)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23DBEAFE' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%232563EB'%3E💻%3C/text%3E%3C/svg%3E" alt="Introducción a la Programación">
+            <span class="course-level">Secundaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Introducción a la Programación</h3>
+            <p>Aprende los fundamentos de la programación con bloques visuales y tu primer lenguaje de código.</p>
+            <div class="course-meta">
+              <span>📚 28 lecciones</span>
+              <span>⏱ 16 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="secundaria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#FEE2E2,#FECACA)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23FEE2E2' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%23EF4444'%3E🇬🇧%3C/text%3E%3C/svg%3E" alt="Inglés Intermedio">
+            <span class="course-level">Secundaria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Inglés Intermedio</h3>
+            <p>Mejora tu vocabulario, gramática y conversación con lecciones interactivas y práctica con IA.</p>
+            <div class="course-meta">
+              <span>📚 36 lecciones</span>
+              <span>⏱ 24 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <!-- Preparatoria -->
+        <article class="course-card" data-level="preparatoria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#EDE9FE,#C4B5FD)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23EDE9FE' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%237C3AED'%3E∫%3C/text%3E%3C/svg%3E" alt="Cálculo Diferencial">
+            <span class="course-level">Preparatoria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Cálculo Diferencial</h3>
+            <p>Límites, derivadas y aplicaciones con visualizaciones interactivas y resolución de problemas guiada.</p>
+            <div class="course-meta">
+              <span>📚 40 lecciones</span>
+              <span>⏱ 30 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="preparatoria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#DBEAFE,#60A5FA)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23DBEAFE' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%232563EB'%3E🤖%3C/text%3E%3C/svg%3E" alt="Inteligencia Artificial">
+            <span class="course-level">Preparatoria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Fundamentos de Inteligencia Artificial</h3>
+            <p>Conoce qué es la IA, cómo funciona el machine learning y crea tu primer proyecto con herramientas modernas.</p>
+            <div class="course-meta">
+              <span>📚 24 lecciones</span>
+              <span>⏱ 18 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+
+        <article class="course-card" data-level="preparatoria">
+          <div class="course-card-image" style="background:linear-gradient(135deg,#D1FAE5,#6EE7B7)">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect fill='%23D1FAE5' width='400' height='180'/%3E%3Ctext x='200' y='100' text-anchor='middle' font-size='48' fill='%2310B981'%3E⚗️%3C/text%3E%3C/svg%3E" alt="Química Orgánica">
+            <span class="course-level">Preparatoria</span>
+          </div>
+          <div class="course-card-body">
+            <h3>Química Orgánica</h3>
+            <p>Estructuras moleculares, reacciones y nomenclatura explicadas con modelos 3D y simulaciones interactivas.</p>
+            <div class="course-meta">
+              <span>📚 35 lecciones</span>
+              <span>⏱ 25 horas</span>
+            </div>
+            <a href="#" class="btn btn-primary btn-sm" style="width:100%">Ver curso</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Section -->
+  <section class="section ai-section" id="ia">
+    <div class="container">
+      <div class="ai-grid reveal">
+        <div>
+          <span class="section-tag">Inteligencia Artificial</span>
+          <h2 class="section-title">Tu IA educativa personal</h2>
+          <p class="section-desc">IA educativa disponible 24/7: responde tus dudas, explica temas paso a paso y usa lenguaje sencillo adaptado a tu nivel.</p>
+          <div class="ai-features">
+            <div class="ai-feature">
+              <div class="ai-feature-icon">❓</div>
+              <div><strong>Resolver dudas</strong><span>Respuestas claras y adaptadas a tu nivel</span></div>
+            </div>
+            <div class="ai-feature">
+              <div class="ai-feature-icon">📚</div>
+              <div><strong>Explicar temas</strong><span>Conceptos complejos explicados de forma sencilla</span></div>
+            </div>
+            <div class="ai-feature">
+              <div class="ai-feature-icon">✏️</div>
+              <div><strong>Ayudar con tareas</strong><span>Guía paso a paso sin hacer el trabajo por ti</span></div>
+            </div>
+            <div class="ai-feature">
+              <div class="ai-feature-icon">🎯</div>
+              <div><strong>Recomendar cursos</strong><span>Sugerencias personalizadas según tu progreso</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="ai-demo">
+          <div class="ai-demo-header">
+            <div class="ai-demo-avatar">🤖</div>
+            <div>
+              <strong>IA educativa — Digital Academy</strong>
+              <span>En línea</span>
+            </div>
+          </div>
+          <div class="ai-demo-messages">
+            <div class="ai-msg bot">¡Hola! Soy tu IA educativa. Pregúntame lo que quieras y te lo explico paso a paso con palabras sencillas.</div>
+            <div class="ai-msg user">¿Me puedes explicar qué es una ecuación?</div>
+            <div class="ai-msg bot"><strong>¿Qué es una ecuación?</strong><br>Es una igualdad con un número desconocido (x).<br><br><strong>Paso a paso — x + 5 = 12:</strong><br>1. Buscamos el valor de x.<br>2. Restamos 5 en ambos lados.<br>3. x = 12 − 5 = <strong>7</strong>.<br>4. Verificamos: 7 + 5 = 12 ✓</div>
+          </div>
+          <div class="ai-demo-input">
+            <input type="text" placeholder="Escribe tu pregunta..." aria-label="Pregunta al asistente">
+            <button aria-label="Enviar">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tutoring -->
+  <section class="section tutoring" id="asesorias">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Asesorías</span>
+        <h2 class="section-title">Agenda una asesoría personalizada</h2>
+        <p class="section-desc">Recibe atención individual de maestros verificados. Elige materia, horario y profesor.</p>
+        <p class="section-desc"><a href="register-teacher.html"><strong>¿Eres maestro?</strong> Regístrate para impartir asesorías →</a></p>
+      </div>
+
+      <form class="tutoring-form-wrap reveal" id="tutoring-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="materia">Materia</label>
+            <select id="materia" required>
+              <option value="">Selecciona una materia</option>
+              <option>Matemáticas</option>
+              <option>Ciencias</option>
+              <option>Español</option>
+              <option>Inglés</option>
+              <option>Programación</option>
+              <option>Historia</option>
+              <option>Física</option>
+              <option>Química</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="nivel">Nivel educativo</label>
+            <select id="nivel" required>
+              <option value="">Selecciona tu nivel</option>
+              <option>Primaria</option>
+              <option>Secundaria</option>
+              <option>Preparatoria</option>
+              <option>Capacitación tecnológica</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" required>
+          </div>
+          <div class="form-group">
+            <label for="horario">Horario</label>
+            <select id="horario" required>
+              <option value="">Selecciona un horario</option>
+              <option>09:00 - 10:00</option>
+              <option>10:00 - 11:00</option>
+              <option>11:00 - 12:00</option>
+              <option>14:00 - 15:00</option>
+              <option>15:00 - 16:00</option>
+              <option>16:00 - 17:00</option>
+              <option>17:00 - 18:00</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="asesor">Asesor</label>
+            <select id="asesor" required>
+              <option value="">Cargando maestros...</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="notas">Notas adicionales (opcional)</label>
+            <textarea id="notas" rows="3" placeholder="Describe el tema o duda que quieres trabajar..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Agendar asesoría</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Statistics -->
+  <section class="section stats" id="estadisticas">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Tu progreso</span>
+        <h2 class="section-title">Panel de estadísticas del estudiante</h2>
+        <p class="section-desc">Visualiza tu avance, cursos completados, horas de estudio y logros obtenidos.</p>
+      </div>
+
+      <div class="stats-grid reveal">
+        <div class="stat-card">
+          <div class="stat-card-icon blue">📊</div>
+          <div class="value">78%</div>
+          <div class="label">Progreso general</div>
+          <div class="progress-bar"><div class="progress-fill" data-width="78"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon purple">📚</div>
+          <div class="value">12</div>
+          <div class="label">Cursos completados</div>
+          <div class="progress-bar"><div class="progress-fill" data-width="60"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon green">⏱</div>
+          <div class="value">156h</div>
+          <div class="label">Horas estudiadas</div>
+          <div class="progress-bar"><div class="progress-fill" data-width="85"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon yellow">🏅</div>
+          <div class="value">Nivel 8</div>
+          <div class="label">Nivel alcanzado</div>
+          <div class="progress-bar"><div class="progress-fill" data-width="80"></div></div>
+        </div>
+      </div>
+
+      <div class="charts-row reveal">
+        <div class="chart-card">
+          <h3>Horas de estudio por semana</h3>
+          <canvas id="studyChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Logros obtenidos</h3>
+          <div class="achievements">
+            <div class="achievement">
+              <div class="achievement-icon">🌟</div>
+              <div><strong>Primer curso completado</strong><span>Hace 2 meses</span></div>
+            </div>
+            <div class="achievement">
+              <div class="achievement-icon">🔥</div>
+              <div><strong>Racha de 7 días</strong><span>Hace 1 semana</span></div>
+            </div>
+            <div class="achievement">
+              <div class="achievement-icon">💯</div>
+              <div><strong>100% en un examen</strong><span>Hace 3 días</span></div>
+            </div>
+            <div class="achievement">
+              <div class="achievement-icon">🎓</div>
+              <div><strong>5 certificados obtenidos</strong><span>Este mes</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Training -->
+  <section class="section tech" id="tecnologia">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Capacitación tecnológica</span>
+        <h2 class="section-title">Aprende tecnología desde cero</h2>
+        <p class="section-desc">¿No sabes usar una computadora? No te preocupes. Estos cursos están diseñados para personas sin experiencia previa.</p>
+      </div>
+
+      <div class="tech-grid reveal">
+        <div class="tech-card">
+          <div class="tech-card-icon">🖥️</div>
+          <h3>Uso básico de computadoras</h3>
+          <p>Encender, apagar, usar el mouse y teclado, y navegar por el escritorio con confianza.</p>
+          <span class="level">Principiante</span>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-icon">🌐</div>
+          <h3>Navegación en Internet</h3>
+          <p>Buscar información, usar navegadores web y visitar sitios de forma segura.</p>
+          <span class="level">Principiante</span>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-icon">📧</div>
+          <h3>Correo electrónico</h3>
+          <p>Crear una cuenta, enviar y recibir mensajes, y organizar tu bandeja de entrada.</p>
+          <span class="level">Principiante</span>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-icon">📄</div>
+          <h3>Microsoft Office</h3>
+          <p>Word, Excel y PowerPoint: crea documentos, hojas de cálculo y presentaciones.</p>
+          <span class="level">Básico</span>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-icon">☁️</div>
+          <h3>Google Drive</h3>
+          <p>Guarda archivos en la nube, comparte documentos y colabora con otros en línea.</p>
+          <span class="level">Básico</span>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-icon">🔒</div>
+          <h3>Seguridad digital</h3>
+          <p>Protege tus contraseñas, identifica amenazas en línea y navega de forma segura.</p>
+          <span class="level">Esencial</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section testimonials" id="opiniones">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Opiniones</span>
+        <h2 class="section-title">Lo que dicen nuestros estudiantes</h2>
+        <p class="section-desc">Miles de estudiantes ya están transformando su futuro con Digital Academy.</p>
+      </div>
+
+      <div class="testimonials-grid reveal" id="testimonials-grid">
+        <p style="color:var(--gray-500);grid-column:1/-1;text-align:center">Cargando opiniones de estudiantes...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mobile QR -->
+  <section class="section mobile-qr-section" id="movil">
+    <div class="container">
+      <div class="mobile-qr-card reveal">
+        <div class="mobile-qr-content">
+          <span class="section-tag">Acceso móvil</span>
+          <h2 class="section-title">Estudia desde tu teléfono</h2>
+          <p class="section-desc">Escanea el código QR con la cámara de tu celular. Tu teléfono y la computadora deben estar en la <strong>misma red WiFi</strong>.</p>
+          <p class="mobile-qr-url" id="mobile-url">Cargando enlace...</p>
+          <p class="mobile-qr-tips" id="mobile-tips"></p>
+          <button type="button" class="btn btn-outline btn-sm" id="mobile-copy-btn">Copiar enlace</button>
+        </div>
+        <div class="mobile-qr-image-wrap">
+          <img id="mobile-qr-img" src="" alt="Código QR para acceder desde el teléfono" width="220" height="220">
+          <span class="mobile-qr-hint">📱 Escanea aquí</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" id="contacto">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo">
+            <div class="logo-icon">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            </div>
+            Digital Academy
+          </a>
+          <p>Plataforma educativa con Inteligencia Artificial para estudiantes de todos los niveles. Aprende, crece y transforma tu futuro.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="Facebook"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+            <a href="#" aria-label="Instagram"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Plataforma</h4>
+          <ul>
+            <li><a href="#cursos">Cursos</a></li>
+            <li><a href="#asesorias">Asesorías</a></li>
+            <li><a href="#tecnologia">Capacitación</a></li>
+            <li><a href="#estadisticas">Mi progreso</a></li>
+            <li><a href="profile.html">Mi perfil</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Soporte</h4>
+          <ul>
+            <li><a href="#">Preguntas frecuentes</a></li>
+            <li><a href="#">Centro de ayuda</a></li>
+            <li><a href="mailto:contacto@digitalacademy.mx">contacto@digitalacademy.mx</a></li>
+            <li><a href="tel:+525512345678">+52 55 1234 5678</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Aviso de privacidad</a></li>
+            <li><a href="#">Términos y condiciones</a></li>
+            <li><a href="#">Política de cookies</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Digital Academy. Todos los derechos reservados.</span>
+        <span>Hecho con 💙 para transformar la educación</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Chat Widget -->
+  <div class="chat-widget">
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <div class="chat-panel-header-info">
+          <div class="chat-panel-avatar">🤖</div>
+          <div>
+            <strong>IA educativa</strong>
+            <span>Disponible 24/7</span>
+          </div>
+        </div>
+        <button class="chat-close" aria-label="Cerrar chat">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="chat-panel-messages"></div>
+      <div class="chat-quick-actions">
+        <button class="chat-quick-btn">Explícame paso a paso</button>
+        <button class="chat-quick-btn">Tengo una duda</button>
+        <button class="chat-quick-btn">Ayúdame con mi tarea</button>
+        <button class="chat-quick-btn">Recomiéndame un curso</button>
+      </div>
+      <div class="chat-panel-input">
+        <input type="text" placeholder="Escribe tu mensaje..." aria-label="Mensaje al asistente">
+        <button aria-label="Enviar mensaje">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="chat-toggle" aria-label="Abrir chat con IA">
+      <span class="pulse-ring"></span>
+      <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/mobile-qr.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/pet.js"></script>
+</body>
+</html>

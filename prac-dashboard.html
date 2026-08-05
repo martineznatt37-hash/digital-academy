@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRAC Dashboard — Ventas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+
+    :root {
+      --bg: #0f1714;
+      --panel: #18221e;
+      --panel-2: #1f2b26;
+      --line: #2d3d36;
+      --text: #eef3ef;
+      --muted: #9aafa4;
+      --accent: #3ecf8e;
+      --accent-2: #f0b429;
+      --accent-3: #5b9cff;
+      --danger: #ff6b6b;
+      --radius: 14px;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 500px at 10% -10%, rgba(62, 207, 142, 0.16), transparent 55%),
+        radial-gradient(800px 420px at 90% 0%, rgba(91, 156, 255, 0.12), transparent 50%),
+        linear-gradient(180deg, #101916 0%, var(--bg) 40%, #0c1210 100%);
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 1.75rem;
+    }
+
+    .brand {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 0.35rem;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      max-width: 42ch;
+      line-height: 1.45;
+    }
+
+    .period {
+      background: rgba(62, 207, 142, 0.12);
+      border: 1px solid rgba(62, 207, 142, 0.35);
+      color: var(--accent);
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .kpi {
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.05rem;
+      box-shadow: var(--shadow);
+      min-height: 110px;
+    }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .kpi strong {
+      display: block;
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.25rem, 2vw, 1.55rem);
+      letter-spacing: -0.02em;
+    }
+
+    .kpi small {
+      display: block;
+      margin-top: 0.4rem;
+      color: var(--accent);
+      font-size: 0.78rem;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.15rem 1.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.05rem;
+    }
+
+    .panel p {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 300px;
+    }
+
+    .table-panel { overflow: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      min-width: 720px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 0.55rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .tag {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      border: 1px solid transparent;
+    }
+
+    .tag.electronica {
+      color: #9ec5ff;
+      background: rgba(91, 156, 255, 0.12);
+      border-color: rgba(91, 156, 255, 0.28);
+    }
+
+    .tag.ropa {
+      color: #ffd27a;
+      background: rgba(240, 180, 41, 0.12);
+      border-color: rgba(240, 180, 41, 0.28);
+    }
+
+    .tag.alimentos {
+      color: #8ef0bf;
+      background: rgba(62, 207, 142, 0.12);
+      border-color: rgba(62, 207, 142, 0.28);
+    }
+
+    @media (max-width: 980px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .charts { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .kpis { grid-template-columns: 1fr; }
+      .wrap { width: min(1180px, calc(100% - 1.25rem)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 class="brand">PRAC Dashboard</h1>
+        <p class="subtitle">Ventas por categoría y evolución mensual (enero–junio).</p>
+      </div>
+      <div class="period">Periodo: Enero – Junio</div>
+    </header>
+
+    <section class="kpis" aria-label="Indicadores KPI">
+      <article class="kpi">
+        <span>Total de ventas</span>
+        <strong id="kpi-total">—</strong>
+        <small>Ingresos acumulados</small>
+      </article>
+      <article class="kpi">
+        <span>Unidades vendidas</span>
+        <strong id="kpi-units">—</strong>
+        <small>Suma de cantidades</small>
+      </article>
+      <article class="kpi">
+        <span>Ticket promedio</span>
+        <strong id="kpi-ticket">—</strong>
+        <small>Promedio por transacción</small>
+      </article>
+      <article class="kpi">
+        <span>Categoría top</span>
+        <strong id="kpi-category">—</strong>
+        <small id="kpi-category-detail">Mayor ingreso</small>
+      </article>
+      <article class="kpi">
+        <span>Mejor mes</span>
+        <strong id="kpi-month">—</strong>
+        <small id="kpi-month-detail">Mayor venta mensual</small>
+      </article>
+    </section>
+
+    <section class="charts" aria-label="Gráficas">
+      <article class="panel">
+        <h2>Gráfica 1 · Barras</h2>
+        <p>Ventas por categoría — cuánto dinero generó cada categoría.</p>
+        <div class="chart-box">
+          <canvas id="chartCategoria"></canvas>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>Gráfica 2 · Líneas</h2>
+        <p>Ventas por mes — evolución de enero a junio.</p>
+        <div class="chart-box">
+          <canvas id="chartMes"></canvas>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel table-panel" aria-label="Tabla de datos">
+      <h2>Detalle de ventas</h2>
+      <p>Total venta = Cantidad × Precio unitario</p>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Mes</th>
+            <th>Categoría</th>
+            <th>Producto</th>
+            <th class="num">Cantidad</th>
+            <th class="num">Precio unitario</th>
+            <th class="num">Total venta</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    const datos = [
+      { id: 1, mes: "Enero", categoria: "Electrónica", producto: "Audífonos", cantidad: 15, precio: 450 },
+      { id: 2, mes: "Enero", categoria: "Ropa", producto: "Playera", cantidad: 40, precio: 180 },
+      { id: 3, mes: "Enero", categoria: "Alimentos", producto: "Café", cantidad: 35, precio: 120 },
+      { id: 4, mes: "Febrero", categoria: "Electrónica", producto: "Bocina", cantidad: 10, precio: 850 },
+      { id: 5, mes: "Febrero", categoria: "Ropa", producto: "Sudadera", cantidad: 18, precio: 450 },
+      { id: 6, mes: "Febrero", categoria: "Alimentos", producto: "Galletas", cantidad: 60, precio: 35 },
+      { id: 7, mes: "Marzo", categoria: "Electrónica", producto: "Mouse", cantidad: 25, precio: 250 },
+      { id: 8, mes: "Marzo", categoria: "Ropa", producto: "Pantalón", cantidad: 20, precio: 500 },
+      { id: 9, mes: "Marzo", categoria: "Alimentos", producto: "Refresco", cantidad: 90, precio: 25 },
+      { id: 10, mes: "Abril", categoria: "Electrónica", producto: "Teclado", cantidad: 18, precio: 650 },
+      { id: 11, mes: "Abril", categoria: "Ropa", producto: "Chamarra", cantidad: 12, precio: 900 },
+      { id: 12, mes: "Abril", categoria: "Alimentos", producto: "Pan", cantidad: 70, precio: 40 },
+      { id: 13, mes: "Mayo", categoria: "Electrónica", producto: "Monitor", cantidad: 8, precio: 3200 },
+      { id: 14, mes: "Mayo", categoria: "Ropa", producto: "Tenis", cantidad: 15, precio: 1200 },
+      { id: 15, mes: "Mayo", categoria: "Alimentos", producto: "Cereal", cantidad: 45, precio: 95 },
+      { id: 16, mes: "Junio", categoria: "Electrónica", producto: "Laptop", cantidad: 5, precio: 15000 },
+      { id: 17, mes: "Junio", categoria: "Ropa", producto: "Gorra", cantidad: 30, precio: 250 },
+      { id: 18, mes: "Junio", categoria: "Alimentos", producto: "Leche", cantidad: 55, precio: 32 },
+    ].map((row) => ({ ...row, total: row.cantidad * row.precio }));
+
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio"];
+    const categorias = ["Electrónica", "Ropa", "Alimentos"];
+
+    const money = (n) =>
+      n.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
+
+    const tagClass = {
+      Electrónica: "electronica",
+      Ropa: "ropa",
+      Alimentos: "alimentos",
+    };
+
+    const ventasCategoria = Object.fromEntries(categorias.map((c) => [c, 0]));
+    const ventasMes = Object.fromEntries(meses.map((m) => [m, 0]));
+    let unidades = 0;
+
+    for (const row of datos) {
+      ventasCategoria[row.categoria] += row.total;
+      ventasMes[row.mes] += row.total;
+      unidades += row.cantidad;
+    }
+
+    const totalVentas = datos.reduce((acc, row) => acc + row.total, 0);
+    const ticket = totalVentas / datos.length;
+
+    const topCategoria = categorias
+      .map((c) => ({ nombre: c, total: ventasCategoria[c] }))
+      .sort((a, b) => b.total - a.total)[0];
+
+    const topMes = meses
+      .map((m) => ({ nombre: m, total: ventasMes[m] }))
+      .sort((a, b) => b.total - a.total)[0];
+
+    document.getElementById("kpi-total").textContent = money(totalVentas);
+    document.getElementById("kpi-units").textContent = unidades.toLocaleString("es-MX");
+    document.getElementById("kpi-ticket").textContent = money(ticket);
+    document.getElementById("kpi-category").textContent = topCategoria.nombre;
+    document.getElementById("kpi-category-detail").textContent = money(topCategoria.total);
+    document.getElementById("kpi-month").textContent = topMes.nombre;
+    document.getElementById("kpi-month-detail").textContent = money(topMes.total);
+
+    const tbody = document.getElementById("tabla-body");
+    tbody.innerHTML = datos
+      .map(
+        (row) => `
+        <tr>
+          <td>${row.id}</td>
+          <td>${row.mes}</td>
+          <td><span class="tag ${tagClass[row.categoria]}">${row.categoria}</span></td>
+          <td>${row.producto}</td>
+          <td class="num">${row.cantidad}</td>
+          <td class="num">${money(row.precio)}</td>
+          <td class="num">${money(row.total)}</td>
+        </tr>`
+      )
+      .join("");
+
+    const gridColor = "rgba(255,255,255,0.08)";
+    const tickColor = "#9aafa4";
+
+    new Chart(document.getElementById("chartCategoria"), {
+      type: "bar",
+      data: {
+        labels: categorias,
+        datasets: [
+          {
+            label: "Ventas ($)",
+            data: categorias.map((c) => ventasCategoria[c]),
+            backgroundColor: ["#5b9cff", "#f0b429", "#3ecf8e"],
+            borderRadius: 8,
+            maxBarThickness: 56,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => money(ctx.parsed.y),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: tickColor },
+            grid: { display: false },
+          },
+          y: {
+            ticks: {
+              color: tickColor,
+              callback: (v) => "$" + Number(v).toLocaleString("es-MX"),
+            },
+            grid: { color: gridColor },
+          },
+        },
+      },
+    });
+
+    new Chart(document.getElementById("chartMes"), {
+      type: "line",
+      data: {
+        labels: meses,
+        datasets: [
+          {
+            label: "Ventas mensuales",
+            data: meses.map((m) => ventasMes[m]),
+            borderColor: "#3ecf8e",
+            backgroundColor: "rgba(62, 207, 142, 0.18)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 5,
+            pointBackgroundColor: "#3ecf8e",
+            pointBorderColor: "#0f1714",
+            pointBorderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => money(ctx.parsed.y),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: tickColor },
+            grid: { color: gridColor },
+          },
+          y: {
+            ticks: {
+              color: tickColor,
+              callback: (v) => "$" + Number(v).toLocaleString("es-MX"),
+            },
+            grid: { color: gridColor },
+          },
+        },
+      },
+    });
+  </script>
+</body>
+</html>
