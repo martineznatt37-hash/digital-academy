@@ -1,10 +1,10 @@
-const { DatabaseSync } = require('node:sqlite');
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
 // En Render puedes montar disco persistente y poner DATABASE_PATH=/var/data/digital-academy.db
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'digital-academy.db');
-const db = new DatabaseSync(dbPath);
+const db = new Database(dbPath);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 

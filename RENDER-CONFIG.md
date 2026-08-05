@@ -4,7 +4,7 @@ En Render → tu servicio **digital-academy** → **Settings**:
 
 | Campo | Valor |
 |--------|--------|
-| **Root Directory** | `server` |
+| **Root Directory** | *(déjalo vacío)* |
 | **Build Command** | `npm install` |
 | **Start Command** | `npm start` |
 | **Node Version** | `22` (o dejar automático) |
