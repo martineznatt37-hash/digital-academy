@@ -5,7 +5,8 @@
   "description": "Digital Academy — root package for Render deploy",
   "scripts": {
     "start": "node server/server.js",
-    "build": "npm install --prefix server"
+    "build": "npm install --prefix server",
+    "postinstall": "npm install --prefix server"
   },
   "engines": {
     "node": ">=22.0.0"
